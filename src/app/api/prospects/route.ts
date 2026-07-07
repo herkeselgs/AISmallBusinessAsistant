@@ -9,16 +9,19 @@ export const maxDuration = 30;
 /**
  * Prospect finder. Real data only — never fabricates businesses.
  * Provider order:
- *   1. Google Places (if GOOGLE_PLACES_API_KEY is set) — richest data.
- *   2. OpenStreetMap (Nominatim + Overpass) — free, no key, coverage varies.
- * Returns { ok:false, reason } on any failure so the UI can fall back to
- * manual entry / CSV paste.
+ *   1. Google Places (key from request OR GOOGLE_PLACES_API_KEY env) — this is
+ *      Google Maps' own business data (name, phone, website, address, rating,
+ *      review count). Best by far.
+ *   2. OpenStreetMap (Nominatim + Overpass) — free, no key, US SMB coverage is thin.
+ * Returns { ok:false, reason } (or ok:true with needsKey) so the UI can fall back
+ * to entering a key / CSV paste.
  */
 
 const Body = z.object({
   city: z.string().min(2),
   trade: z.string().min(1),
   max: z.number().int().min(1).max(60).optional(),
+  apiKey: z.string().trim().optional(),
 });
 
 export async function POST(req: Request) {
@@ -29,29 +32,51 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "Enter a city and a trade." }, { status: 400 });
   }
   const max = input.max ?? 30;
+  const key = input.apiKey || process.env.GOOGLE_PLACES_API_KEY || "";
 
+  // Prefer Google Places whenever we have a key.
+  if (key) {
+    try {
+      const prospects = await fromGooglePlaces(key, input.trade, input.city, max);
+      return NextResponse.json({ ok: true, provider: "Google Maps (Places)", prospects });
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : "error";
+      let reason: string;
+      if (/API key not valid|API_KEY_INVALID/i.test(raw)) {
+        reason = "That Google Maps key isn't valid. Double-check you copied it fully.";
+      } else if (/PERMISSION_DENIED|not enabled|SERVICE_DISABLED|has not been used/i.test(raw)) {
+        reason = 'Enable "Places API (New)" for this key in Google Cloud (APIs & Services → Library).';
+      } else if (/billing/i.test(raw)) {
+        reason = "Turn on billing for the Google Cloud project (free $200/mo covers thousands of searches).";
+      } else if (/quota|RESOURCE_EXHAUSTED|429/i.test(raw)) {
+        reason = "Google quota hit — wait a minute and try again, or check quotas in Google Cloud.";
+      } else {
+        reason = "Google Maps search failed. Check the key, that Places API (New) is enabled, and billing is on.";
+      }
+      return NextResponse.json({ ok: false, reason }, { status: 200 });
+    }
+  }
+
+  // No key → free OSM fallback (thin), then nudge to add a key.
   try {
-    if (process.env.GOOGLE_PLACES_API_KEY) {
-      const prospects = await fromGooglePlaces(input.trade, input.city, max);
-      return NextResponse.json({ ok: true, provider: "Google Places", prospects });
-    }
     const prospects = await fromOpenStreetMap(input.trade, input.city, max);
-    if (!prospects.length) {
-      return NextResponse.json({
-        ok: true,
-        provider: "OpenStreetMap",
-        prospects: [],
-        note: "No results from the free source for that trade/area — coverage is thin. Add a Google Places key for full results, or use CSV/paste import.",
-      });
-    }
-    return NextResponse.json({ ok: true, provider: "OpenStreetMap", prospects });
-  } catch (err) {
-    console.error("prospect finder failed", err);
+    return NextResponse.json({
+      ok: true,
+      provider: "OpenStreetMap (free)",
+      prospects,
+      needsKey: true,
+      note:
+        "Free source coverage is thin for US trades. Paste a Google Maps (Places) API key above for full results — or use CSV/paste import.",
+    });
+  } catch {
     return NextResponse.json(
       {
-        ok: false,
-        reason:
-          "Automatic search is unavailable right now (no Google Places key, or outbound blocked). Use CSV / paste import — it always works.",
+        ok: true,
+        provider: "OpenStreetMap (free)",
+        prospects: [],
+        needsKey: true,
+        note:
+          "Automatic search needs a Google Maps (Places) API key (free) — paste one above. Meanwhile, CSV / paste import always works.",
       },
       { status: 200 }
     );
@@ -60,8 +85,12 @@ export async function POST(req: Request) {
 
 /* ------------------------- Google Places (New) ------------------------- */
 
-async function fromGooglePlaces(trade: string, city: string, max: number): Promise<Prospect[]> {
-  const key = process.env.GOOGLE_PLACES_API_KEY!;
+async function fromGooglePlaces(
+  key: string,
+  trade: string,
+  city: string,
+  max: number
+): Promise<Prospect[]> {
   const results: Prospect[] = [];
   let pageToken: string | undefined;
 
@@ -75,11 +104,14 @@ async function fromGooglePlaces(trade: string, city: string, max: number): Promi
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
         "X-Goog-FieldMask":
-          "places.displayName,places.nationalPhoneNumber,places.websiteUri,places.formattedAddress,places.rating,places.userRatingCount,nextPageToken",
+          "places.displayName,places.nationalPhoneNumber,places.websiteUri,places.formattedAddress,places.rating,places.userRatingCount,places.googleMapsUri,nextPageToken",
       },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`Places ${res.status}`);
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status}${t ? ` ${t.slice(0, 120)}` : ""}`);
+    }
     const data = (await res.json()) as {
       places?: Array<{
         displayName?: { text?: string };
@@ -88,6 +120,7 @@ async function fromGooglePlaces(trade: string, city: string, max: number): Promi
         formattedAddress?: string;
         rating?: number;
         userRatingCount?: number;
+        googleMapsUri?: string;
       }>;
       nextPageToken?: string;
     };
@@ -97,12 +130,12 @@ async function fromGooglePlaces(trade: string, city: string, max: number): Promi
           business: pl.displayName?.text ?? "",
           trade,
           phone: pl.nationalPhoneNumber ?? "",
-          website: pl.websiteUri ?? "",
+          website: pl.websiteUri ?? pl.googleMapsUri ?? "",
           address: pl.formattedAddress ?? "",
           rating: pl.rating != null ? String(pl.rating) : "",
           reviews: pl.userRatingCount != null ? String(pl.userRatingCount) : "",
           owner: "Unknown",
-          source: "Google Places",
+          source: "Google Maps",
         })
       );
     }
@@ -130,14 +163,11 @@ function tradeFilters(trade: string): string[] {
   for (const row of TRADE_TAGS) {
     if (row.match.some((m) => t.includes(m))) return row.filters;
   }
-  // Unknown trade: broad craft net.
   return ['craft~"hvac|plumber|electrician|roofer|gardener|painter|builder|carpenter"'];
 }
 
 async function fromOpenStreetMap(trade: string, city: string, max: number): Promise<Prospect[]> {
   const ua = "FolvraProspectFinder/1.0 (folvra.com)";
-
-  // 1) Geocode the city to a bounding box.
   const geoRes = await fetch(
     `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(city)}`,
     { headers: { "User-Agent": ua, "Accept-Language": "en" } }
@@ -146,11 +176,9 @@ async function fromOpenStreetMap(trade: string, city: string, max: number): Prom
   const geo = (await geoRes.json()) as Array<{ boundingbox?: [string, string, string, string] }>;
   const bb = geo[0]?.boundingbox;
   if (!bb) return [];
-  // Nominatim bbox = [south, north, west, east]; Overpass wants (south,west,north,east).
   const [south, north, west, east] = bb;
   const bbox = `${south},${west},${north},${east}`;
 
-  // 2) Overpass query for the trade's tags within the bbox.
   const filters = tradeFilters(trade);
   const clauses = filters.map((f) => `nwr[${f}](${bbox});`).join("\n");
   const query = `[out:json][timeout:25];(${clauses});out center tags ${max * 2};`;
@@ -161,9 +189,7 @@ async function fromOpenStreetMap(trade: string, city: string, max: number): Prom
     body: `data=${encodeURIComponent(query)}`,
   });
   if (!opRes.ok) throw new Error(`Overpass ${opRes.status}`);
-  const op = (await opRes.json()) as {
-    elements?: Array<{ tags?: Record<string, string> }>;
-  };
+  const op = (await opRes.json()) as { elements?: Array<{ tags?: Record<string, string> }> };
 
   const out: Prospect[] = [];
   for (const el of op.elements ?? []) {

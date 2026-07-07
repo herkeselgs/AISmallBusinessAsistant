@@ -31,6 +31,9 @@ import {
 
 const STORAGE_KEY = "folvra_prospects_v1";
 const YC_KEY = "folvra_yc_v1";
+const PLACES_KEY = "folvra_places_key";
+const mapsSearchUrl = (city: string, trade: string) =>
+  `https://www.google.com/maps/search/${encodeURIComponent(`${trade} in ${city}`)}`;
 const TARGETS = { contacted: 30, called: 20, emailed: 10, sms: 5, demoBooked: 3, pilotStarted: 1 };
 
 function seedBlank(n: number): Prospect[] {
@@ -68,6 +71,8 @@ export function ProspectConsole() {
   const [found, setFound] = useState<Prospect[]>([]);
   const [findMsg, setFindMsg] = useState<string | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [placesKey, setPlacesKey] = useState("");
+  const [keyHelp, setKeyHelp] = useState(false);
 
   // import + table controls
   const [showImport, setShowImport] = useState(false);
@@ -84,8 +89,22 @@ export function ProspectConsole() {
     } catch {
       setRows(seedBlank(30));
     }
+    try {
+      setPlacesKey(localStorage.getItem(PLACES_KEY) || "");
+    } catch {
+      /* ignore */
+    }
     loaded.current = true;
   }, []);
+
+  useEffect(() => {
+    if (!loaded.current) return;
+    try {
+      localStorage.setItem(PLACES_KEY, placesKey);
+    } catch {
+      /* ignore */
+    }
+  }, [placesKey]);
 
   useEffect(() => {
     if (!loaded.current) return;
@@ -169,21 +188,28 @@ export function ProspectConsole() {
       const res = await fetch("/api/prospects", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ city: city.trim(), trade: trade.trim(), max: maxN }),
+        body: JSON.stringify({
+          city: city.trim(),
+          trade: trade.trim(),
+          max: maxN,
+          apiKey: placesKey.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!data.ok) {
         setFindMsg(data.reason || "Search unavailable — use CSV / paste import below.");
+        if (!placesKey.trim()) setKeyHelp(true);
         return;
       }
       const list: Prospect[] = data.prospects ?? [];
       setFound(list);
       setPicked(new Set(list.map((p) => p.id)));
-      setFindMsg(
-        list.length
-          ? `Found ${list.length} via ${data.provider}. Review, then add.`
-          : data.note || "No results — try a broader area or use CSV / paste import."
-      );
+      if (list.length) {
+        setFindMsg(`Found ${list.length} via ${data.provider}. Review, then add.`);
+      } else {
+        setFindMsg(data.note || "No results — try a broader area or use CSV / paste import.");
+        if (data.needsKey) setKeyHelp(true);
+      }
     } catch {
       setFindMsg("Search unavailable — use CSV / paste import below (always works).");
     } finally {
@@ -286,6 +312,51 @@ export function ProspectConsole() {
           </button>
         </div>
 
+        {/* Google Maps data key (stored in this browser only — no redeploy needed) */}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <input
+            value={placesKey}
+            onChange={(e) => setPlacesKey(e.target.value)}
+            placeholder="Google Maps (Places) API key — paste for full results"
+            className={cn(inputCls, "max-w-sm font-mono text-xs")}
+            spellCheck={false}
+          />
+          {placesKey.trim() ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Google Maps data ON
+            </span>
+          ) : (
+            <button onClick={() => setKeyHelp((v) => !v)} className={ghost}>
+              Get a free key (2 min)
+            </button>
+          )}
+          <a
+            href={mapsSearchUrl(city.trim() || "your city", trade.trim() || "hvac")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={ghost}
+          >
+            <Globe className="h-3.5 w-3.5" /> Open in Google Maps
+          </a>
+        </div>
+
+        {keyHelp && (
+          <div className="mt-2 rounded-xl border border-line bg-paper/60 p-3 text-xs text-ink-soft">
+            <p className="font-semibold text-ink">Get a free Google Maps (Places) API key — ~2 min:</p>
+            <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+              <li>Go to{" "}
+                <a href="https://console.cloud.google.com/google/maps-apis/start" target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline">
+                  console.cloud.google.com/google/maps-apis
+                </a>{" "}
+                → create a project.
+              </li>
+              <li>Enable <span className="font-medium text-ink">&quot;Places API (New)&quot;</span> and turn on billing (Google gives $200/mo free — thousands of searches).</li>
+              <li>APIs &amp; Services → Credentials → <span className="font-medium text-ink">Create credentials → API key</span>. Copy it.</li>
+              <li>Paste it in the box above. It&apos;s stored only in this browser and used for your searches. (Restrict it to Places API in Google for safety.)</li>
+            </ol>
+          </div>
+        )}
+
         <div className="mt-2 flex flex-wrap gap-2">
           <button onClick={() => setShowImport((v) => !v)} className={ghost}>
             <Upload className="h-3.5 w-3.5" /> Import CSV / paste
@@ -303,8 +374,10 @@ export function ProspectConsole() {
 
         {findMsg && <p className="mt-2 text-xs text-ink-faint">{findMsg}</p>}
         <p className="mt-1 text-[11px] text-ink-faint">
-          Uses Google Places if a key is set, else free OpenStreetMap data (coverage varies). Never
-          invents businesses. Missing owner/email shows blank or &quot;Unknown&quot;. CSV/paste always works.
+          With a Google Maps key you get 30–60 real businesses per search (phone, website, rating).
+          Without one, the free source is thin — use <span className="font-medium">Open in Google Maps</span>{" "}
+          + <span className="font-medium">Import CSV / paste</span>. Never invents businesses; missing
+          owner/email shows blank or &quot;Unknown&quot;.
         </p>
 
         {showImport && (
