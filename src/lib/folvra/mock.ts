@@ -25,15 +25,35 @@ const SPAM_SIGNALS = [
   "increase your sales",
 ];
 
+// Order matters — first match wins, so put specific/urgent trades before generic.
 const SERVICE_KEYWORDS: Record<string, string[]> = {
+  "HVAC (heating & cooling)": ["hvac", "furnace", "air condition", "a/c", " ac ", "heating", "cooling", "no heat", "no ac", "boiler", "heat pump"],
+  Roofing: ["roof", "shingle", "gutter"],
+  "Bathroom remodel": ["bathroom", "shower", "vanity"],
   "Kitchen remodel": ["kitchen"],
-  "Bathroom remodel": ["bathroom", "bath", "shower", "vanity"],
   "Basement finishing": ["basement"],
-  "Deck / outdoor": ["deck", "porch", "patio", "outdoor"],
+  Landscaping: ["landscap", "lawn", "yard", "sod", "mulch", "retaining wall", "garden", "planting"],
+  "House cleaning": ["cleaning", "housekeeping", "maid", "clean"],
+  "Deck / outdoor": ["deck", "porch", "patio"],
   Addition: ["addition", "add on", "add-on", "extension"],
 };
 
-const URGENT_WORDS = ["asap", "urgent", "leak", "water damage", "emergency", "move fast", "quickly"];
+const URGENT_WORDS = [
+  "asap", "urgent", "leak", "water damage", "emergency", "move fast", "quickly",
+  "no heat", "no ac", "freezing", "tonight", "today", "flooding", "burst", "quit",
+];
+
+const EST_VALUE: Record<string, number> = {
+  "HVAC (heating & cooling)": 6000,
+  Roofing: 9000,
+  "Bathroom remodel": 12000,
+  "Kitchen remodel": 25000,
+  "Basement finishing": 18000,
+  Landscaping: 4500,
+  "House cleaning": 200,
+  "Deck / outdoor": 8000,
+  Addition: 30000,
+};
 
 function extractName(msg: InboundMessage): string | null {
   const nameLine = msg.body.match(/name:\s*([A-Za-z][A-Za-z .'-]+)/i);
@@ -97,8 +117,8 @@ export function mockClassify(msg: InboundMessage): LeadClassification {
       : "book_appointment",
     urgency,
     preferredTimes: null,
-    estValueUsd: service?.startsWith("Kitchen") ? 25000 : service?.startsWith("Bath") ? 12000 : null,
-    summary: `${service ?? "Remodeling"} inquiry${urgency === "high" ? " (time-sensitive)" : ""}.`,
+    estValueUsd: service ? EST_VALUE[service] ?? null : null,
+    summary: `${service ?? "Home services"} inquiry${urgency === "high" ? " (time-sensitive)" : ""}.`,
   };
 }
 

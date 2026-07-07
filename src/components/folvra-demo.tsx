@@ -16,9 +16,11 @@ import { cn } from "@/lib/utils";
 import type { HandleResult, InboundMessage } from "@/lib/folvra/types";
 
 const SAMPLES = [
-  { id: "kitchen", label: "Kitchen remodel", sub: "website form · 11:42 PM" },
-  { id: "bathroom", label: "Bathroom, urgent", sub: "direct email · 6:15 AM" },
-  { id: "thumbtack", label: "Deck build", sub: "Thumbtack lead · 9:03 PM" },
+  { id: "hvac", label: "HVAC emergency", sub: "website form · 10:52 PM" },
+  { id: "roofing", label: "Roofing estimate", sub: "Angi lead · 7:41 AM" },
+  { id: "bathroom", label: "Bathroom remodel", sub: "direct email · 6:15 AM" },
+  { id: "landscaping", label: "Landscaping quote", sub: "Thumbtack · 8:24 PM" },
+  { id: "cleaning", label: "Cleaning inquiry", sub: "direct email · 1:07 PM" },
   { id: "spam", label: "Vendor spam", sub: "watch Folvra skip it" },
 ];
 
@@ -29,7 +31,7 @@ type ApiResponse = {
 };
 
 export function FolvraDemo() {
-  const [activeId, setActiveId] = useState<string>("kitchen");
+  const [activeId, setActiveId] = useState<string>("hvac");
   const [custom, setCustom] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ApiResponse | null>(null);

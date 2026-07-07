@@ -119,6 +119,69 @@ For each: grab business name, owner first name (from reviews / "About"), phone, 
 
 Then work the list: call during business hours (call script), email/DM the rest.`;
 
+const VOICEMAIL = `Hi {FirstName}, this is {YourName} — I build a tool that replies to your new leads in under a minute and follows up until they book, so you stop losing jobs to whoever answered first.
+
+I'll text you a 30-second link so you can see it on one of your own leads — no pressure. If it's useful, the pilot's free for two weeks. Again, {YourName}, {YourNumber}. Talk soon.
+
+(Then immediately send the SMS so the voicemail + text land together.)`;
+
+const DEMO_CHECKLIST = `BEFORE THE DEMO
+□ folvra.com and folvra.com/dashboard open in tabs
+□ Know their trade + roughly what a job is worth to them
+□ Have ONE of their real/typical leads to paste (ask for it)
+
+DURING (5 min)
+□ Hook: "whoever follows up first wins the job — let's race it"
+□ Paste their lead → show detect (job type + urgency) → reply in their voice
+□ Show the follow-up + move-toward-booked step
+□ Run the "Vendor spam" sample → "it won't send junk to your customers"
+□ Show Approve-first on /dashboard → "nothing goes out without your OK"
+□ The math: one saved job = ~6 months of Folvra
+
+CLOSE
+□ "Free 14-day pilot, I can have it live tomorrow — fair?"
+□ Get: business email, best number, one lead source to point it at
+□ Book the setup time on the spot
+
+AFTER
+□ Send the post-demo follow-up within 10 min
+□ Log everything in the tracker + update /yc`;
+
+const LOG_AFTER_CALL = `LOG AFTER EVERY CALL (in the tracker):
+• Contacted? ✓  • Did they pick up / reply? ✓
+• Interested / demo booked / pilot? mark it
+• Notes: their trade, how they handle leads now, the ONE pain they named, objection heard, next step + date
+• If no answer: leave the voicemail, send the SMS, set a follow-up for +2 days
+• Update /yc counts before you move on (contacted, conversations, demos)`;
+
+const ASK_PAYMENT = `HOW TO ASK FOR PAYMENT (end of a good pilot / when they see value)
+
+Soft (mid-pilot, after a win):
+"Glad that one landed. Want me to just keep it running? It's $99/mo — I can set it up now so there's no gap."
+
+Direct (end of pilot):
+"You booked {N} jobs from leads Folvra caught in two weeks. I'd love to keep going — it's $99/mo, cancel anytime. Want me to turn the pilot into a plan? I'll send a quick payment link."
+
+If they hesitate:
+"Totally fair. What would you need to see to make this a no-brainer?" (then deliver exactly that.)
+
+Note: take payment however is fastest for you (Stripe payment link, invoice). Don't over-engineer it.`;
+
+const ASK_TESTIMONIAL = `HOW TO ASK FOR A TESTIMONIAL (right after a visible win)
+
+"Quick favor — that lead Folvra just booked for you, would you be up for a one-liner I can share? Something like: 'Folvra booked me a $__ job I would've missed.' Two sentences, your name + business. Huge help."
+
+Then capture it verbatim into /yc → 'Best quotes'. Ask for permission to use name + business. If they're thrilled, ask for a Google review of your business too, and whether they'd refer one other owner (offer them a free month).`;
+
+const NON_NEGOTIABLES = [
+  ["30", "businesses contacted"],
+  ["20", "calls"],
+  ["10", "emails / contact forms"],
+  ["5", "SMS / DMs"],
+  ["3", "demos booked"],
+  ["1", "pilot ask"],
+];
+
 export default function FounderPage() {
   return (
     <div className="min-h-screen bg-paper">
@@ -154,6 +217,19 @@ export default function FounderPage() {
           </p>
         </section>
 
+        {/* Non-negotiables */}
+        <section className="mt-6">
+          <h2 className="mb-3 text-lg font-bold text-ink">Tomorrow&apos;s non-negotiables</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {NON_NEGOTIABLES.map(([n, label]) => (
+              <div key={label} className="rounded-xl border border-line bg-white p-4 text-center shadow-card">
+                <div className="text-3xl font-bold text-brand-600">{n}</div>
+                <div className="mt-1 text-xs text-ink-faint">{label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Tracker */}
         <section className="mt-8">
           <h2 className="mb-3 text-lg font-bold text-ink">Outreach tracker</h2>
@@ -165,14 +241,19 @@ export default function FounderPage() {
           <h2 className="mb-3 text-lg font-bold text-ink">Scripts</h2>
           <div className="grid gap-4 lg:grid-cols-2">
             <CopyBlock title="Cold call (30 sec)" text={CALL} />
+            <CopyBlock title="Voicemail (leave + text)" text={VOICEMAIL} />
             <CopyBlock title="SMS / DM" text={SMS} />
             <CopyBlock title="Cold email 1 — the miss" text={EMAIL1} />
             <CopyBlock title="Cold email 2 — proof (+2 days)" text={EMAIL2} />
             <CopyBlock title="Cold email 3 — breakup (+4 days)" text={EMAIL3} />
-            <CopyBlock title="Follow-up after a demo" text={FOLLOWUP} />
             <CopyBlock title="5-minute demo script" text={DEMO} />
+            <CopyBlock title="Demo checklist" text={DEMO_CHECKLIST} />
             <CopyBlock title="Objection handling" text={OBJECTIONS} />
+            <CopyBlock title="Follow-up after a demo" text={FOLLOWUP} />
             <CopyBlock title="Pilot onboarding message" text={PILOT_ONBOARDING} />
+            <CopyBlock title="What to log after every call" text={LOG_AFTER_CALL} />
+            <CopyBlock title="How to ask for payment" text={ASK_PAYMENT} />
+            <CopyBlock title="How to ask for a testimonial" text={ASK_TESTIMONIAL} />
             <CopyBlock title="Build your 30 (list-building)" text={LIST} />
           </div>
         </section>

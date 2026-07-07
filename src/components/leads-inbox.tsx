@@ -101,7 +101,7 @@ export function LeadsInbox() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-ink">Summit Remodeling</h1>
+            <h1 className="text-xl font-bold text-ink">Summit Home Services</h1>
             <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-ink-faint">
               demo workspace
             </span>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, CalendarClock, Zap } from "lucide-react";
+import { ArrowLeft, CalendarClock, Check, Zap } from "lucide-react";
 import { PilotForm } from "@/components/pilot-form";
 import { FOUNDER_EMAIL } from "@/lib/folvra/contact";
 
@@ -49,7 +49,22 @@ export default function PilotPage() {
             approve-first mode, so nothing goes out without your OK. If it saves you one job, it&apos;s
             paid for itself.
           </p>
-          <div className="mt-4">
+          <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+            {[
+              "Free 14-day pilot",
+              "No credit card",
+              "We set up your lead workflow manually first",
+              "You approve replies before anything goes out",
+              "Best fit: businesses getting 10+ inbound leads/month",
+              "Cancel anytime — keep it only if it books you a job",
+            ].map((b) => (
+              <li key={b} className="flex items-start gap-2 text-sm text-ink-soft">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                {b}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-5">
             <a
               href={demoMailto}
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink underline-offset-4 hover:underline"

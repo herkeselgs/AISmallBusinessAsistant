@@ -156,6 +156,14 @@ export function PilotForm() {
           <ShieldCheck className="h-3.5 w-3.5" /> No account, no card. We reply within one business
           day to set up your pilot.
         </p>
+        <p className="mt-1 text-xs text-ink-faint">
+          Button not opening your email app? Tap <span className="font-medium text-ink-soft">Copy
+          message</span> and send it to{" "}
+          <a href={`mailto:${FOUNDER_EMAIL}`} className="font-medium text-ink underline">
+            {FOUNDER_EMAIL}
+          </a>
+          .
+        </p>
       </div>
 
       {/* Live preview */}
@@ -218,6 +226,6 @@ function buildMessage(f: Fields): string {
     `Biggest lead / follow-up problem:`,
     f.biggestProblem.trim() || "—",
     ``,
-    `Sent from folvra.com`,
+    `Source: https://folvra.com/pilot`,
   ].join("\n");
 }

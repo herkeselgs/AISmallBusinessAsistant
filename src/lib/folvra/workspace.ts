@@ -93,9 +93,11 @@ export async function buildInitialLeads(
   brain: BusinessBrain = DEMO_BRAIN
 ): Promise<{ leads: LeadRecord[]; screened: number }> {
   const seedStatuses: Record<string, LeadStatus> = {
-    kitchen: "booked",
-    bathroom: "sent",
-    thumbtack: "drafted",
+    bathroom: "booked",
+    roofing: "booked",
+    hvac: "sent",
+    landscaping: "drafted",
+    cleaning: "drafted",
   };
 
   const records: LeadRecord[] = [];

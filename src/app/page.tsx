@@ -19,6 +19,7 @@ export default function Home() {
       <Hero />
       <ProblemStrip />
       <HowItWorks />
+      <ChannelsBand />
       <WhyFolvra />
       <Pricing />
       <FAQ />
@@ -99,7 +100,11 @@ function Hero() {
             </a>
           </div>
           <p className="mt-4 text-sm text-ink-faint">
-            No credit card · No new software to learn · Set up in a day
+            Free 14-day pilot · No credit card · Approve-first, then autopilot
+          </p>
+          <p className="mx-auto mt-3 max-w-xl text-xs text-ink-faint">
+            Built for contractors, remodelers, HVAC, roofers, landscapers, cleaners, plumbers &amp;
+            electricians.
           </p>
         </div>
 
@@ -185,6 +190,39 @@ function HowItWorks() {
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function ChannelsBand() {
+  const channels = ["Website forms", "Yelp", "Angi", "Thumbtack", "Google", "Facebook", "Email"];
+  return (
+    <section className="border-t border-line bg-white py-14">
+      <div className="mx-auto max-w-4xl px-5 text-center">
+        <h2 className="text-xl font-bold text-ink sm:text-2xl">
+          Works with the leads you already get
+        </h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-ink-soft">
+          Almost every place your leads come in sends you an email notification. During your pilot we
+          point Folvra at those, so it can reply and follow up on all of them — no new tools, no
+          switching how you get leads.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          {channels.map((c) => (
+            <span
+              key={c}
+              className="rounded-full border border-line bg-paper px-3 py-1.5 text-sm font-medium text-ink-soft"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+        <p className="mt-5 text-sm text-ink-faint">
+          <span className="font-semibold text-ink">Approve-first, then autopilot.</span> You okay the
+          first replies; flip on autopilot once you trust it. Folvra never invents prices and hands
+          anything sensitive back to you.
+        </p>
       </div>
     </section>
   );

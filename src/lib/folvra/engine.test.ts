@@ -35,24 +35,35 @@ describe("mockClassify", () => {
     expect(c.category).toBe("vendor_or_spam");
   });
 
-  it("detects a real kitchen lead with contact + service", () => {
-    const c = mockClassify(lead("kitchen"));
+  it("detects a real HVAC lead with contact + service", () => {
+    const c = mockClassify(lead("hvac"));
     expect(c.isLead).toBe(true);
-    expect(c.service).toMatch(/kitchen/i);
+    expect(c.service).toMatch(/hvac/i);
     expect(c.contactPhone).toBeTruthy();
   });
 
-  it("marks a water-damage bathroom lead as high urgency", () => {
+  it("marks an HVAC emergency (no heat, newborn) as high urgency", () => {
+    const c = mockClassify(lead("hvac"));
+    expect(c.urgency).toBe("high");
+  });
+
+  it("detects a bathroom remodel lead", () => {
     const c = mockClassify(lead("bathroom"));
     expect(c.isLead).toBe(true);
-    expect(c.urgency).toBe("high");
     expect(c.service).toMatch(/bath/i);
+  });
+
+  it("recognizes each demo vertical as a lead (except spam)", () => {
+    for (const id of ["hvac", "roofing", "bathroom", "landscaping", "cleaning"]) {
+      expect(mockClassify(lead(id)).isLead).toBe(true);
+    }
+    expect(mockClassify(lead("spam")).isLead).toBe(false);
   });
 });
 
 describe("mockDraft", () => {
   it("greets the lead, offers real slots, and signs off as the business", () => {
-    const msg = lead("kitchen");
+    const msg = lead("roofing");
     const c = mockClassify(msg);
     const slots = generateSlots({ count: 3 });
     const draft = mockDraft(msg, slots, DEMO_BRAIN, c);
@@ -67,7 +78,7 @@ describe("mockDraft", () => {
   });
 
   it("never fabricates a firm price in the reply", () => {
-    const msg = lead("kitchen");
+    const msg = lead("roofing");
     const c = mockClassify(msg);
     const draft = mockDraft(msg, generateSlots({ count: 3 }), DEMO_BRAIN, c);
     // mock reply should not quote a specific dollar figure
