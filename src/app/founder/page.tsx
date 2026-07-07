@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CopyBlock, FounderConsole } from "@/components/founder-console";
+import { CopyBlock } from "@/components/founder-console";
+import { ProspectConsole } from "@/components/prospect-console";
 
 export const metadata = {
   title: "Folvra — Founder Console",
@@ -230,10 +231,10 @@ export default function FounderPage() {
           </div>
         </section>
 
-        {/* Tracker */}
+        {/* Find prospects + spreadsheet */}
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-bold text-ink">Outreach tracker</h2>
-          <FounderConsole />
+          <h2 className="mb-3 text-lg font-bold text-ink">Find prospects &amp; work the spreadsheet</h2>
+          <ProspectConsole />
         </section>
 
         {/* Scripts */}

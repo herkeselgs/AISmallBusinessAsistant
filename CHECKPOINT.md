@@ -1,81 +1,84 @@
 # CHECKPOINT — Folvra
 
-_Last updated: 2026-07-07 (overnight session #2 — conversion polish)_
+_Last updated: 2026-07-07 (session #3 — prospect finder + outreach spreadsheet)_
 
 Live domain: **https://folvra.com** · Branch: `claude/ai-employee-startup-sdk3er`
 
-## Status: ✅ STABLE — build + 12 tests pass, everything committed & pushed
+## Status: ✅ STABLE — build + 24 tests pass, everything committed & pushed
 
-## Completed (this session — conversion polish)
-1. **Production verification** — live folvra.com could **not** be reached from the
-   sandbox (network policy denies outbound to folvra.com:443; proxy logged
-   `connect_rejected 403`). Verified **locally instead**: fresh server, all routes
-   HTTP 200, demo API correct per vertical. Source clean: **no "Otto", no vercel.app**.
-2. **Landing polish** — hero microcopy → "Free 14-day pilot · No credit card ·
-   Approve-first, then autopilot" + verticals line (contractors/remodelers/HVAC/
-   roofers/landscapers/cleaners/plumbers/electricians). New **ChannelsBand** section
-   (Website forms/Yelp/Angi/Thumbtack/Google/Facebook/Email) framed honestly ("during
-   your pilot we point Folvra at those" — no false "live integration" claim) +
-   approve-first line. CTAs all → /pilot.
-3. **Demo upgrade** — demo business is now multi-trade "Summit Home Services". Six
-   vertical sample buttons: **HVAC emergency, Roofing estimate, Bathroom remodel,
-   Landscaping quote, Cleaning inquiry, Vendor spam**. Mock classifier extended
-   (services + urgency + $ ranges) so each shows job type, urgency, draft reply,
-   follow-up/booking step — spam skipped. Verified live per-vertical.
-4. **/pilot conversion** — benefits list (free 14-day pilot, no card, we set up
-   manually first, you approve replies, best fit 10+ leads/mo, cancel anytime).
-   Message now includes `Source: https://folvra.com/pilot`. Fallback: copy message +
-   the founder email shown for manual send.
-5. **/founder cockpit** — added Voicemail, Demo checklist, "What to log after every
-   call", "How to ask for payment", "How to ask for a testimonial", and a
-   **"Tomorrow's non-negotiables"** panel (30 contacted / 20 calls / 10 emails / 5
-   SMS / 3 demos / 1 pilot). Tracker (30 rows, CSV export) unchanged.
-6. **/yc tracker** — added "Demos completed", "Biggest objections heard", "Product
-   changes from feedback", and a **"Copy summary for the YC app"** button.
-7. **Docs** — new `docs/05-tomorrow-outreach-plan.md`, `06-demo-and-pilot-playbook.md`,
-   `07-yc-metrics.md` (practical, mirror /founder + /yc).
+## Completed (this session — /founder prospect finder + spreadsheet)
+- **Prospect finder** (`/api/prospects` + "Find prospects" section on /founder):
+  enter city/area + trade + max (default 30) → returns real businesses. Provider
+  order: **Google Places** (if `GOOGLE_PLACES_API_KEY` set) → **OpenStreetMap**
+  (Nominatim + Overpass, free, no key) → graceful `{ok:false}` so the UI always
+  falls back to CSV/paste. **Never fabricates data** (real sources only); missing
+  owner/email → blank or "Unknown"; every row carries a `source`.
+- **Full outreach spreadsheet** (localStorage `folvra_prospects_v1`, seeded 30 rows):
+  24 columns incl. all requested fields, editable cells, status dropdown, checkbox
+  columns, follow-up date, notes, next action. Sortable (click header) + text filter.
+  Per-row **actions**: Call (tel:), Email (mailto:), Open website, Copy cold email,
+  Copy SMS (both customized w/ business + trade), and quick-mark Contacted / Demo /
+  Pilot. Add row / delete row / reset.
+- **Preview + add flow:** found prospects show in a preview table with per-row
+  checkboxes → "Add selected" / "Add all"; **dedupe** by name + phone/website;
+  existing manual rows preserved.
+- **Import/Export:** Export CSV (download), **Copy for Google Sheets** (TSV),
+  Import CSV/paste (header-mapped or headerless with phone/email/website detection).
+- **Summary panel:** total / contacted / replied / demos booked / demos done /
+  pilots / paying + conversion rates + "today's remaining" chips (30/20/10/5/3/1).
+- **YC sync:** "Sync to YC tracker" writes outreach-derived counts into
+  `folvra_yc_v1` (merges, preserves testimonials/quotes/etc.); reload /yc to see.
+- `.env.example` documents optional `GOOGLE_PLACES_API_KEY` (no key required).
 
-## Prior session (still in place)
-Full Otto→Folvra rename; new positioning ("follows up with every lead before it goes
-cold"); canonical → folvra.com; `/pilot`, `/founder`, `/yc`, `/dashboard`; approve-first
-dashboard; mock fallback. No Gmail/Calendar/Supabase/auth/payments.
+## Verification (this session)
+- `npm test` → **24/24 pass** (added 12 prospect tests: dedupe, merge, CSV/TSV,
+  import parsing incl. round-trip, summarize, YC mapping).
+- `npm run build` → **success**; `/api/prospects` + all pages compile.
+- Runtime (local, same-process): `/ /dashboard /pilot /founder /yc` all **200**.
+- Finder **fails gracefully**: valid body w/ no key + blocked outbound →
+  `{ok:false, reason:"…use CSV/paste"}` at 200; bad body → 400. (In this sandbox
+  outbound is firewalled; on Vercel OSM will return real results, Places if keyed.)
+- /founder renders (screenshot): finder + summary + 30-row spreadsheet + actions.
 
-## Build / test status
-- `npm test` → **12/12 pass**. `npm run build` → **success** (prerenders `/ /dashboard
-  /pilot /founder /yc` + API routes). Runs fully in **mock mode with no API key**.
+## Prior sessions (still in place)
+Otto→Folvra rename; positioning "follows up with every lead before it goes cold";
+6-vertical demo; /pilot, /founder, /yc, /dashboard; approve-first dashboard; mock
+fallback. No Gmail/Calendar/Supabase/auth/payments.
 
 ## Files changed / added this session
-- Edited: `src/lib/folvra/samples.ts` (multi-trade brain + 6 samples), `mock.ts`
-  (vertical detection + urgency + $), `workspace.ts` (seed statuses),
-  `src/components/folvra-demo.tsx` (6 buttons), `leads-inbox.tsx` (name),
-  `src/app/page.tsx` (hero + ChannelsBand), `src/app/pilot/page.tsx` +
-  `src/components/pilot-form.tsx`, `src/app/founder/page.tsx`,
-  `src/components/yc-tracker.tsx`, `src/lib/folvra/engine.test.ts`.
-- Added: `docs/05/06/07`, updated `CHECKPOINT.md`.
+- Added: `src/lib/folvra/prospects.ts`, `src/lib/folvra/prospects.test.ts`,
+  `src/app/api/prospects/route.ts`, `src/components/prospect-console.tsx`.
+- Edited: `src/app/founder/page.tsx` (render ProspectConsole instead of the old
+  tracker; keeps CopyBlock scripts), `.env.example`.
+- `src/components/founder-console.tsx` still exports `CopyBlock` (used) and the old
+  `FounderConsole` (now unused, harmless).
 
 ## Known bugs / limitations
-- **None blocking.** Live-site verification blocked by sandbox egress policy (see #1) —
-  verified via build + local server instead.
-- Trackers on /founder and /yc persist in **browser localStorage only** (by design).
-  Export CSV / copy-summary before switching browsers.
-- Pilot requests go to `FOUNDER_EMAIL` in `src/lib/folvra/contact.ts`
-  (`usstephan431@gmail.com`) via the visitor's mail client (mailto).
+- **None blocking.** Auto-search returns few/no results via OSM for thinly-mapped
+  US trades — that's expected; **CSV/paste is the reliable workhorse**, and Google
+  Places (optional key) gives full data.
+- Trackers persist in **browser localStorage only** (per-browser). Export CSV to back
+  up / move devices.
+- YC sync writes localStorage; /yc must be reloaded to reflect new numbers
+  (no cross-tab live refresh by design).
 
-## Manual actions for the founder (only if needed)
-- **Confirm the latest push deployed** on Vercel (open folvra.com; should show the new
-  hero "Free 14-day pilot… Approve-first" + 6 demo buttons). If stale → Vercel →
-  Deployments → Redeploy, or confirm Production Branch = `claude/ai-employee-startup-sdk3er`.
-- Optional real AI: add `ANTHROPIC_API_KEY` in Vercel env → redeploy (do NOT set
-  `ANTHROPIC_BASE_URL`). Mock works without it.
+## Manual actions for the founder (optional)
+- **Best prospect data:** add `GOOGLE_PLACES_API_KEY` in Vercel env → redeploy.
+  Get it at console.cloud.google.com (Places API, New). Without it, OSM + CSV work.
+- Confirm latest deploy is live on folvra.com (should show 6-vertical demo + the new
+  /founder finder). If stale → Vercel → Deployments → Redeploy.
 
 ## Exact next prompt to resume
-> "Resume Folvra. Read CHECKPOINT.md. Site is fully rebranded + conversion-polished
-> (6-vertical demo, /pilot, /founder cockpit, /yc). Next, in order: (1) once I have
-> 2–3 pilots, wire pilot-form submits to a real capture (Formspree or a Vercel route
-> that emails me) so I don't depend on the owner's mail client; (2) a /thanks page
-> after submit; (3) only after that, the real Gmail + Calendar integration behind
-> Google OAuth in test mode. Keep mock fallback; no payments/CRM yet."
+> "Resume Folvra. Read CHECKPOINT.md. /founder now has a prospect finder + full
+> outreach spreadsheet (localStorage) + YC sync. Next, in order: (1) wire the
+> pilot form to a real capture (Formspree or a Vercel route that emails me) + a
+> /thanks page; (2) optional: add a Yelp Fusion provider to the finder as another
+> keyed source; (3) only after 2–3 pilots, real Gmail+Calendar behind Google OAuth
+> (test mode). Keep mock fallback + never fabricate prospect data; no payments/CRM."
 
-## What to do tomorrow morning
-Open **/founder**, build your 30-business list, hit the non-negotiables (30 contacted /
-3 demos / 1 pilot). Scripts are on /founder and in `docs/06`. Log to the tracker + /yc.
+## What to do next (tomorrow morning)
+Open **/founder**. Try "Find prospects" (Fort Myers, FL / HVAC). If auto-search is
+thin, use **Import CSV / paste**: pull a list from Google Maps and paste it — the
+spreadsheet fills automatically. Then work the rows: Call/Email/Copy-SMS, mark
+Contacted/Demo/Pilot, hit the non-negotiables (30 contacted / 3 demos / 1 pilot),
+and click **Sync to YC tracker** at end of day.
