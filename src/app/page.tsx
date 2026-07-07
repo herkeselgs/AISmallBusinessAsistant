@@ -47,6 +47,7 @@ function Nav() {
           <a href="#how" className="hover:text-ink">How it works</a>
           <a href="#why" className="hover:text-ink">Why Otto</a>
           <a href="#pricing" className="hover:text-ink">Pricing</a>
+          <a href="/dashboard" className="hover:text-ink">Product tour</a>
         </nav>
         <a
           href="#demo"
@@ -103,6 +104,15 @@ function Hero() {
 
         <div id="demo" className="mt-12 scroll-mt-20 sm:mt-16">
           <OttoDemo />
+        </div>
+        <div className="mt-5 text-center">
+          <a
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink underline-offset-4 hover:underline"
+          >
+            Or tour the full leads inbox Otto gives you
+            <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
       </div>
     </section>
