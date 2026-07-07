@@ -159,7 +159,7 @@ export function computeStats(leads: LeadRecord[], screened: number) {
   const times = active.map((l) => l.respondedInSec).sort((a, b) => a - b);
   const median = times.length ? times[Math.floor(times.length / 2)] : 0;
   const booked = active.filter((l) => l.status === "booked" || l.status === "won").length;
-  // Only count value we can attribute to Otto having replied first (booked/won/sent).
+  // Only count value we can attribute to Folvra having replied first (booked/won/sent).
   const pipelineRescued = active
     .filter((l) => ["sent", "booked", "won"].includes(l.status))
     .reduce((sum, l) => sum + (l.classification.estValueUsd ?? 0), 0);

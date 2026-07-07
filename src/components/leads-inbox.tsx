@@ -16,7 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { LeadRecord, LeadStatus } from "@/lib/otto/types";
+import type { LeadRecord, LeadStatus } from "@/lib/folvra/types";
 
 const STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
   new: { label: "New", cls: "bg-ink/10 text-ink-soft" },
@@ -106,7 +106,7 @@ export function LeadsInbox() {
               demo workspace
             </span>
           </div>
-          <p className="text-sm text-ink-faint">Otto is watching your inbox.</p>
+          <p className="text-sm text-ink-faint">Folvra is watching your inbox.</p>
         </div>
         <div className="flex items-center gap-2">
           <ModeToggle autopilot={autopilot} onChange={setAutopilot} />
@@ -199,8 +199,8 @@ export function LeadsInbox() {
         </div>
       </div>
       <p className="mt-3 text-center text-xs text-ink-faint">
-        Demo workspace with sample leads. Connect Google and this fills with your real inbox — Otto
-        replies and books to your calendar.
+        Demo workspace with sample leads. In your pilot, this fills with your real leads — Folvra
+        replies, follows up, and helps book the estimate.
       </p>
     </div>
   );
@@ -250,21 +250,21 @@ function LeadDetail({
         </div>
       </div>
 
-      {/* Otto flagged */}
+      {/* Folvra flagged */}
       {lead.draft?.needsHuman && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 p-2.5 text-xs text-amber-600">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>Otto flagged this for your review: {lead.draft.reason}</span>
+          <span>Folvra flagged this for your review: {lead.draft.reason}</span>
         </div>
       )}
 
-      {/* Otto's reply */}
+      {/* Folvra's reply */}
       {lead.draft && (
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <Label>
               <span className="inline-flex items-center gap-1">
-                <Sparkles className="h-3.5 w-3.5 text-brand-500" /> Otto&apos;s reply
+                <Sparkles className="h-3.5 w-3.5 text-brand-500" /> Folvra&apos;s reply
               </span>
             </Label>
             {lead.status === "drafted" && !editing && (

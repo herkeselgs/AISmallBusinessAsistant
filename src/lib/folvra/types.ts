@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 /**
- * The "Business Brain" — Otto's model of a specific business. Learned at
+ * The "Business Brain" — Folvra's model of a specific business. Learned at
  * onboarding (from the website + inbox) and continuously tuned by the owner.
- * Everything Otto says is grounded in this. It never invents beyond it.
+ * Everything Folvra says is grounded in this. It never invents beyond it.
  */
 export const BusinessBrainSchema = z.object({
   name: z.string(),
@@ -16,7 +16,7 @@ export const BusinessBrainSchema = z.object({
   services: z.array(z.string()).default([]),
   pricingNotes: z
     .string()
-    .describe("Only prices Otto is allowed to quote. Empty = quote nothing.")
+    .describe("Only prices Folvra is allowed to quote. Empty = quote nothing.")
     .default(""),
   faqs: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
   tone: z
@@ -34,13 +34,13 @@ export const BusinessBrainSchema = z.object({
     .default([]),
   escalateTopics: z
     .array(z.string())
-    .describe("Topics Otto must hand to a human instead of answering.")
+    .describe("Topics Folvra must hand to a human instead of answering.")
     .default(["complaints", "legal or safety issues", "refunds"]),
   signature: z.string().optional(),
 });
 export type BusinessBrain = z.infer<typeof BusinessBrainSchema>;
 
-/** A proposed open slot Otto can offer, derived from the owner's calendar. */
+/** A proposed open slot Folvra can offer, derived from the owner's calendar. */
 export const SlotSchema = z.object({
   /** ISO start time. */
   start: z.string(),
@@ -77,10 +77,10 @@ export type LeadClassification = z.infer<typeof LeadClassificationSchema>;
 
 /** Result of drafting a reply. */
 export const ReplyDraftSchema = z.object({
-  reply: z.string().describe("The full email body Otto would send."),
-  offeredSlots: z.array(z.string()).describe("ISO starts Otto offered, subset of provided slots."),
+  reply: z.string().describe("The full email body Folvra would send."),
+  offeredSlots: z.array(z.string()).describe("ISO starts Folvra offered, subset of provided slots."),
   confidence: z.number().min(0).max(1),
-  needsHuman: z.boolean().describe("True if Otto is unsure and should route to the owner."),
+  needsHuman: z.boolean().describe("True if Folvra is unsure and should route to the owner."),
   reason: z.string().describe("Why needsHuman is true/false — for the owner's trust."),
 });
 export type ReplyDraft = z.infer<typeof ReplyDraftSchema>;
@@ -93,7 +93,7 @@ export interface InboundMessage {
   receivedAt?: string;
 }
 
-/** Full result of Otto handling one inbound message end-to-end (for the demo). */
+/** Full result of Folvra handling one inbound message end-to-end (for the demo). */
 export interface HandleResult {
   classification: LeadClassification;
   draft: ReplyDraft | null;
@@ -121,7 +121,7 @@ export interface LeadRecord {
   id: string;
   channel: LeadChannel;
   receivedAt: string; // human label, e.g. "11:42 PM"
-  respondedInSec: number; // Otto's response time for this lead
+  respondedInSec: number; // Folvra's response time for this lead
   message: InboundMessage;
   classification: LeadClassification;
   draft: ReplyDraft | null;

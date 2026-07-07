@@ -28,7 +28,7 @@ A robotic "Thanks for reaching out!" is worse than nothing — it burns the lead
 **5. "Gmail-watching is fragile and Google API approval is a nightmare (restricted
 scopes, security review). You'll be stuck in OAuth verification hell for months."**
 
-**6. "Attribution is hard. When a job books, was it Otto or would they have booked
+**6. "Attribution is hard. When a job books, was it Folvra or would they have booked
 anyway? If owners can't feel the ROI, they churn after the trial."**
 
 **7. "Home-service owners are hard to reach and slow to adopt software. Low
@@ -66,12 +66,12 @@ not the API call.
 
 **→ 3 & 4 (trust / quality — the existential risk):** This is the product, so we
 over-invest here:
-- **Approve-first by default.** Otto drafts; owner taps Approve for the first N
+- **Approve-first by default.** Folvra drafts; owner taps Approve for the first N
   leads. Zero unsupervised emails until the owner has *seen* the quality on their
   own leads. Autopilot is earned, one tap, and reversible.
 - **Confidence gating.** Even in Autopilot, low-confidence drafts (unknown price,
   edge case, complaint, legal/medical) auto-route to approve-first and/or escalate
-  to the owner. Otto knows what it doesn't know.
+  to the owner. Folvra knows what it doesn't know.
 - **Hard guardrails.** Never invents prices, guarantees, or scope it wasn't given.
   Configurable "always hand to a human" topics.
 - **Quality-first prompts** grounded in the real Brain + real thread + real
@@ -84,16 +84,16 @@ operate as a Google Cloud project in **testing mode with pilot users added as te
 users** — no public verification needed for the first ~100 users. (b) We minimize
 scopes and can start with **`gmail.readonly` + draft/send only for detected
 leads**, and offer a **forwarding/alias fallback** (owner forwards or auto-forwards
-lead notifications to an Otto address) so we're not blocked on restricted-scope
+lead notifications to an Folvra address) so we're not blocked on restricted-scope
 review to prove value. Verification is a parallel workstream, not a gate on the
 first 25 users.
 
 **→ 6 (attribution / felt ROI):** Make ROI **undeniable and continuous**:
 - The **replay wow-moment** at onboarding (before any trust is needed) shows a
   real past lead they mishandled.
-- The dashboard tracks **median response time (Otto vs the industry 47h)**,
+- The dashboard tracks **median response time (Folvra vs the industry 47h)**,
   **leads that would have gone unanswered after-hours**, and a conservative
-  **pipeline-rescued** number (only counts after-hours / >1h-old leads Otto caught
+  **pipeline-rescued** number (only counts after-hours / >1h-old leads Folvra caught
   first). We under-claim on purpose so the number is credible.
 - Weekly recap email makes the value arrive in their pocket without opening the app.
 
@@ -105,10 +105,10 @@ lead** ("forward me one and watch"). Distribution is high-touch founder sales in
 trades communities — appropriate for a wedge, and exactly what YC wants to see.
 
 **→ 10 (portal relay emails hide the customer):** Real and important. Handling:
-Angi/Thumbtack/Yelp send a notification email that Otto **can still reply to via
-the relay** (the platforms route replies back to the customer) — so Otto responds
+Angi/Thumbtack/Yelp send a notification email that Folvra **can still reply to via
+the relay** (the platforms route replies back to the customer) — so Folvra responds
 *inside the platform's own reply channel*, which is exactly where speed wins on
-those marketplaces. Where a portal truly blocks programmatic reply, Otto drafts +
+those marketplaces. Where a portal truly blocks programmatic reply, Folvra drafts +
 notifies the owner to one-tap send, still collapsing response time from hours to
 seconds. Direct website forms and direct emails (the majority for most target
 customers) are fully automatable.

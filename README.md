@@ -1,13 +1,15 @@
-# Otto — the AI employee that never lets a lead go cold
+# Folvra — the AI employee that follows up with every lead before it goes cold
 
-Otto answers every new inbound lead in **under 60 seconds** and books the job on
-the owner's calendar — 24/7. Connect one inbox and Otto catches leads from your
-website, Yelp, Angi, Thumbtack, Google, and direct email (they all send an email
-notification), replies in the owner's voice, and proposes real appointment times.
+Live at **https://folvra.com**
+
+Folvra replies to every new lead in **under 60 seconds**, collects the job details,
+**follows up** until they respond, and helps book the estimate — 24/7. It works the
+leads you already get from your website, Yelp, Angi, Thumbtack, Google, and direct
+email (they all send an email notification), replying in the owner's voice.
 
 > **Why this exists:** 78% of customers hire whoever responds first; the average
 > business takes 47 hours. Home-service businesses lose $45k–$120k/year to slow
-> lead response. Otto fixes the single most expensive, most daily problem a small
+> lead response. Folvra fixes the single most expensive, most daily problem a small
 > business has. See [`docs/01-market-research.md`](docs/01-market-research.md).
 
 ## What's in this repo
@@ -16,19 +18,35 @@ notification), replies in the owner's voice, and proposes real appointment times
 docs/                     Strategy: research, product design, YC critique, GTM
 src/
   app/
-    page.tsx              Landing page (the front door + live demo)
-    api/demo/route.ts     Demo endpoint — runs the real Otto engine
-  components/otto-demo.tsx Interactive "watch Otto handle a lead" widget
+    page.tsx              Landing page (front door + live demo)
+    dashboard/            Product tour: the leads inbox (approve-first)
+    pilot/                Free-pilot / demo request form (mailto, no DB)
+    founder/             Founder outreach console: scripts + localStorage tracker (no nav link)
+    yc/                   YC traction tracker (localStorage, no nav link)
+    api/demo, api/leads   Endpoints that run the real Folvra engine
+  components/             folvra-demo, leads-inbox, pilot-form, founder-console, yc-tracker
   lib/
     anthropic.ts          Claude client + model tiering
-    otto/
+    folvra/
       engine.ts           classifyLead / draftReply / handleLead (Claude + mock)
       prompts.ts          The prompts — the actual product
       types.ts            Business Brain, classification, reply schemas (zod)
+      workspace.ts        Demo leads board + ROI stats
       availability.ts     Calendar-slot generation
       mock.ts             Deterministic fallback (runs with no API key)
       samples.ts          Demo Business Brain + sample leads
+      contact.ts          Founder email for pilot requests
 ```
+
+## Pages
+
+| Route | What it is |
+|---|---|
+| `/` | Landing page + live demo |
+| `/dashboard` | Product tour — the leads inbox (approve-first) |
+| `/pilot` | Free-pilot / 5-min-demo request (builds a prefilled email) |
+| `/founder` | **Private** — outreach scripts + tracker (no nav link) |
+| `/yc` | **Private** — traction metrics tracker (no nav link) |
 
 ## The one exceptional feature
 

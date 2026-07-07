@@ -142,11 +142,11 @@ Each problem scored 1–10 on seven weighted criteria (weights sum to 100%):
 
 ### The one-line product
 
-> **Otto — the AI employee that answers every new lead in under 60 seconds and
+> **Folvra — the AI employee that answers every new lead in under 60 seconds and
 > books the job on your calendar, 24/7.** Connect your inbox, and stop losing
 > jobs to whoever replied first.
 
-Working name **"Otto"** (evokes *auto* + reads like a teammate's name). Renameable.
+Working name **"Folvra"** (evokes *auto* + reads like a teammate's name). Renameable.
 
 ### Beachhead customer
 

@@ -13,13 +13,13 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { HandleResult, InboundMessage } from "@/lib/otto/types";
+import type { HandleResult, InboundMessage } from "@/lib/folvra/types";
 
 const SAMPLES = [
   { id: "kitchen", label: "Kitchen remodel", sub: "website form · 11:42 PM" },
   { id: "bathroom", label: "Bathroom, urgent", sub: "direct email · 6:15 AM" },
   { id: "thumbtack", label: "Deck build", sub: "Thumbtack lead · 9:03 PM" },
-  { id: "spam", label: "Vendor spam", sub: "watch Otto skip it" },
+  { id: "spam", label: "Vendor spam", sub: "watch Folvra skip it" },
 ];
 
 type ApiResponse = {
@@ -28,7 +28,7 @@ type ApiResponse = {
   business: string;
 };
 
-export function OttoDemo() {
+export function FolvraDemo() {
   const [activeId, setActiveId] = useState<string>("kitchen");
   const [custom, setCustom] = useState("");
   const [loading, setLoading] = useState(false);
@@ -104,12 +104,12 @@ export function OttoDemo() {
               }}
               className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white transition hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Run Otto on it <ArrowRight className="h-4 w-4" />
+              Run Folvra on it <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* Right: Otto's work */}
+        {/* Right: Folvra's work */}
         <div className="min-h-[420px] rounded-xl border border-line bg-paper/60 p-4 sm:p-5">
           {loading && <LoadingState />}
           {!loading && error && (
@@ -122,8 +122,8 @@ export function OttoDemo() {
         </div>
       </div>
       <p className="mt-3 text-center text-xs text-ink-faint">
-        This is the real engine. In the product, Otto watches your actual inbox and books to your
-        Google Calendar.
+        This is the real engine. In your pilot, Folvra works your actual leads — replies, follows up,
+        and helps book the estimate.
       </p>
     </div>
   );
@@ -136,7 +136,7 @@ function EmptyState() {
         <Sparkles className="h-6 w-6" />
       </div>
       <p className="max-w-xs text-sm text-ink-faint">
-        Pick a lead on the left. Watch Otto read it, reply in the owner&apos;s voice, and offer real
+        Pick a lead on the left. Watch Folvra read it, reply in the owner&apos;s voice, and offer real
         appointment times — in seconds.
       </p>
     </div>
@@ -174,7 +174,7 @@ function ResultView({ data }: { data: ApiResponse }) {
     return (
       <div className="flex h-full flex-col justify-center gap-4 animate-fade-up">
         <div className="inline-flex w-fit items-center gap-2 rounded-full bg-ink/5 px-3 py-1 text-xs font-semibold text-ink-soft">
-          <ShieldCheck className="h-3.5 w-3.5" /> Otto screened this
+          <ShieldCheck className="h-3.5 w-3.5" /> Folvra screened this
         </div>
         <div className="flex items-start gap-3 rounded-xl border border-line bg-white p-4">
           <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
@@ -182,7 +182,7 @@ function ResultView({ data }: { data: ApiResponse }) {
             <div className="font-semibold text-ink">Skipped — not a customer lead</div>
             <p className="mt-1 text-sm text-ink-faint">{c.summary}</p>
             <p className="mt-2 text-sm text-ink-soft">
-              A dumb autoresponder would&apos;ve emailed this spammer back. Otto knows the difference,
+              A dumb autoresponder would&apos;ve emailed this spammer back. Folvra knows the difference,
               so your customers only ever get real replies.
             </p>
           </div>
@@ -198,7 +198,7 @@ function ResultView({ data }: { data: ApiResponse }) {
         className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 animate-fade-up"
       >
         <div className="flex items-center gap-1.5 text-sm font-semibold text-brand-700">
-          <Zap className="h-4 w-4" /> Otto responded instantly
+          <Zap className="h-4 w-4" /> Folvra responded instantly
         </div>
         <div className="text-xs text-ink-faint">
           Industry average: <span className="line-through">47 hours</span>
@@ -222,7 +222,7 @@ function ResultView({ data }: { data: ApiResponse }) {
       {/* Reply */}
       {result.draft && (
         <div className="animate-fade-up" style={{ animationDelay: "160ms" }}>
-          <StepLabel n={2} text="Otto's reply — in the owner's voice" />
+          <StepLabel n={2} text="Folvra's reply — in the owner's voice" />
           <div className="mt-2 rounded-xl border border-line bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-line px-4 py-2 text-xs text-ink-faint">
               <span>
@@ -236,13 +236,16 @@ function ResultView({ data }: { data: ApiResponse }) {
               {result.draft.reply}
             </p>
           </div>
+          <p className="mt-1.5 text-xs text-ink-faint">
+            You approve or edit before it sends — or let Folvra run on autopilot.
+          </p>
         </div>
       )}
 
       {/* Booking */}
       {result.draft && result.draft.offeredSlots.length > 0 && (
         <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
-          <StepLabel n={3} text="Booked to the calendar" />
+          <StepLabel n={3} text="Toward a booked estimate — with follow-up" />
           <div className="mt-2 flex items-center gap-3 rounded-xl border border-brand-200 bg-white p-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-white">
               <CalendarCheck className="h-5 w-5" />
@@ -252,7 +255,8 @@ function ResultView({ data }: { data: ApiResponse }) {
                 {c.contactName ?? "New lead"} — {c.service ?? "estimate"}
               </div>
               <div className="text-ink-faint">
-                Otto offered {result.draft.offeredSlots.length} open times; the first pick lands here.
+                Folvra offered {result.draft.offeredSlots.length} open times. If they go quiet, it
+                follows up automatically until the estimate is booked.
               </div>
             </div>
           </div>

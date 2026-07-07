@@ -1,8 +1,8 @@
 {
-  "name": "otto",
+  "name": "folvra",
   "version": "0.1.0",
   "private": true,
-  "description": "Otto — the AI employee that never lets a lead go cold.",
+  "description": "Folvra — the AI employee that never lets a lead go cold.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateNewLead } from "@/lib/otto/workspace";
+import { generateNewLead } from "@/lib/folvra/workspace";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const Body = z.object({ autopilot: z.boolean().optional() });
 
-/** Simulates a brand-new inbound lead arriving, processed by Otto. */
+/** Simulates a brand-new inbound lead arriving, processed by Folvra. */
 export async function POST(req: Request) {
   let autopilot = false;
   try {

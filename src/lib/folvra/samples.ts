@@ -2,7 +2,7 @@ import type { BusinessBrain, InboundMessage } from "./types";
 
 /**
  * A realistic demo Business Brain for a home-services company. Used on the
- * landing-page demo so a visitor sees Otto reply as a real business.
+ * landing-page demo so a visitor sees Folvra reply as a real business.
  */
 export const DEMO_BRAIN: BusinessBrain = {
   name: "Summit Remodeling",

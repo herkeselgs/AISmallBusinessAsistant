@@ -1,6 +1,6 @@
 # Phase 2 — Product Design (MVP)
 
-_Product: **Otto** — the AI employee that never lets a lead go cold._
+_Product: **Folvra** — the AI employee that never lets a lead go cold._
 
 ## The one exceptional feature (the whole MVP)
 
@@ -25,26 +25,26 @@ Sign in with Google (Gmail + Calendar, read + send scoped)
       │
       ▼
 ONBOARDING (≈3 min, the activation moment)
-  1. Otto reads your website + last 90 days of email → drafts your "Business Brain"
+  1. Folvra reads your website + last 90 days of email → drafts your "Business Brain"
      (services, pricing hints, service area, hours, tone, FAQs)
   2. You review/edit the Brain (2–3 quick confirmations, not a form wall)
   3. Set booking rules: appointment types, durations, buffer, availability,
      which calendar, address/virtual, how far out
-  4. WOW MOMENT: Otto finds a *real past lead* in your inbox that you replied to
+  4. WOW MOMENT: Folvra finds a *real past lead* in your inbox that you replied to
      slowly (or never) and shows the reply it *would* have sent in 45 seconds.
       │
       ▼
 GO LIVE — choose mode:
-   • Autopilot: Otto replies & books automatically
-   • Approve-first: Otto drafts, you tap Approve (great for week 1 trust)
+   • Autopilot: Folvra replies & books automatically
+   • Approve-first: Folvra drafts, you tap Approve (great for week 1 trust)
       │
       ▼
 STEADY STATE
   New lead arrives (email / web-form email / marketplace email)
-    → Otto classifies: is this a lead? intent? service? urgency?
-    → Otto drafts a personalized reply w/ real availability
+    → Folvra classifies: is this a lead? intent? service? urgency?
+    → Folvra drafts a personalized reply w/ real availability
     → (approve-first: notify owner to approve) / (autopilot: send)
-    → Customer picks a time → Otto books it on Calendar + confirms both sides
+    → Customer picks a time → Folvra books it on Calendar + confirms both sides
     → Owner sees it on the dashboard: "Booked ✓ Sarah — kitchen estimate — Tue 2pm"
       │
       ▼
@@ -57,7 +57,7 @@ DASHBOARD / DAILY HABIT
 1. **Landing page** — visceral problem, live-ish demo, one CTA (Connect Google).
 2. **Onboarding wizard** — Brain review → booking rules → the replay wow-moment.
 3. **Inbox / Leads** — the heart. Stream of detected leads, each with the
-   conversation, Otto's draft/sent reply, status (New → Replied → Booked → Won),
+   conversation, Folvra's draft/sent reply, status (New → Replied → Booked → Won),
    and Approve/Edit/Send controls. This is where owners live in week 1.
 4. **Business Brain** — editable knowledge the AI uses (services, pricing, FAQs,
    service area, tone, do/don't rules, escalation triggers).
@@ -162,7 +162,7 @@ ROI framing everywhere: *"One rescued $600 job pays for 6 months."*
 
 - **Activation metric:** *first AI reply sent to a real lead within 24h of signup*
   (and ideally first booking within 72h).
-- Onboarding is ≤3 minutes and ends on the **replay wow-moment** (Otto shows what
+- Onboarding is ≤3 minutes and ends on the **replay wow-moment** (Folvra shows what
   it would have said to a real past lead). This is the single most important
   screen — it converts skeptics before we've even gone live.
 - Approve-first mode by default for the first 10 leads to build trust, then a
@@ -170,21 +170,21 @@ ROI framing everywhere: *"One rescued $600 job pays for 6 months."*
 
 ## Retention & daily habit
 
-- **The morning email:** "While you slept, Otto handled 3 leads and booked 1
+- **The morning email:** "While you slept, Folvra handled 3 leads and booked 1
   ($1,900 job). 1 needs your input." Opens the app → daily habit.
 - **Dashboard ROI counter:** cumulative "pipeline rescued" and "hours saved" —
   the number that makes cancellation feel insane.
-- **Approve/edit loop** teaches Otto the owner's voice → replies get better →
+- **Approve/edit loop** teaches Folvra the owner's voice → replies get better →
   owner trusts Autopilot → stickier.
 
 ## Growth loops
 
 - **Booked-appointment footer:** every AI reply/confirmation carries a subtle
-  "Scheduled with Otto" — seen by the *customer* (a small business owner-type
+  "Scheduled with Folvra" — seen by the *customer* (a small business owner-type
   audience) → curiosity → signups. (Toggleable; on by default on free plan.)
 - **Referral:** "Give a fellow owner a month free, get a month free." Owners in
   trades talk constantly and refer tools that make them money.
-- **ROI share card:** one-tap "I rescued $12,400 in leads this month with Otto"
+- **ROI share card:** one-tap "I rescued $12,400 in leads this month with Folvra"
   card for Facebook groups / LinkedIn.
 - **Marketplace-lead reactivation:** wow existing leads → visible wins → word of
   mouth in local trade groups.

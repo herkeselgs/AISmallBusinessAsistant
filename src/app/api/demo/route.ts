@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { handleLead } from "@/lib/otto/engine";
-import { DEMO_BRAIN, SAMPLE_LEADS } from "@/lib/otto/samples";
-import type { InboundMessage } from "@/lib/otto/types";
+import { handleLead } from "@/lib/folvra/engine";
+import { DEMO_BRAIN, SAMPLE_LEADS } from "@/lib/folvra/samples";
+import type { InboundMessage } from "@/lib/folvra/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("demo handleLead failed", err);
     return NextResponse.json(
-      { error: "Otto hit an error handling that lead. Try again." },
+      { error: "Folvra hit an error handling that lead. Try again." },
       { status: 500 }
     );
   }

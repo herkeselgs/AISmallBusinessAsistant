@@ -4,8 +4,8 @@ import Anthropic from "@anthropic-ai/sdk";
 export const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
 
 export const MODELS = {
-  draft: process.env.OTTO_DRAFT_MODEL || "claude-opus-4-8",
-  classify: process.env.OTTO_CLASSIFY_MODEL || "claude-haiku-4-5-20251001",
+  draft: process.env.FOLVRA_DRAFT_MODEL || "claude-opus-4-8",
+  classify: process.env.FOLVRA_CLASSIFY_MODEL || "claude-haiku-4-5-20251001",
 } as const;
 
 let client: Anthropic | null = null;

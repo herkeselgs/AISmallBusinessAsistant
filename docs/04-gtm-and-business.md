@@ -1,38 +1,38 @@
 # Phase 6 & 7 — Business, Messaging & Go-To-Market
 
-Product: **Otto** — the AI employee that never lets a lead go cold.
+Product: **Folvra** — the AI employee that never lets a lead go cold.
 
 ---
 
 ## Brand positioning
 
-- **Category:** Not "AI receptionist." Otto is **an AI employee for the front
+- **Category:** Not "AI receptionist." Folvra is **an AI employee for the front
   desk** — specifically, the one who makes sure no lead ever goes cold.
-- **One-liner:** *Otto answers every new lead in under 60 seconds and books the
+- **One-liner:** *Folvra answers every new lead in under 60 seconds and books the
   job on your calendar — 24/7.*
 - **Positioning statement:** For small home-service businesses that live on
-  inbound leads, Otto is the AI employee that replies to every inquiry instantly
+  inbound leads, Folvra is the AI employee that replies to every inquiry instantly
   and books the appointment — so you stop losing jobs to whoever answered first.
-  Unlike AI phone receptionists (crowded, robotic, expensive), Otto works the
+  Unlike AI phone receptionists (crowded, robotic, expensive), Folvra works the
   channel that actually books jobs — your inbox — in your own voice.
 - **Voice/tone:** Confident, plainspoken, a little blue-collar. Talks about
   *jobs won and lost*, not "AI." Respects the owner's time and skepticism.
-- **Logo concept:** Wordmark "Otto" in a heavy geometric sans; the mark is a
+- **Logo concept:** Wordmark "Folvra" in a heavy geometric sans; the mark is a
   rounded-square "O" badge (a name tag / employee badge). Palette: near-black
   ink `#0E1116`, warm paper `#FBFAF7`, a single confident green `#0FA968`
   (money/trust/"booked"). Optional motif: a small green pulse = "replied."
-- **Domain ideas:** hireotto.com, getotto.com, ottoreplies.com, meetotto.ai.
+- **Domain ideas:** hirefolvra.com, getfolvra.com, folvrareplies.com, meetfolvra.ai.
 
 ## Messaging pillars (use everywhere)
 
-1. **Speed wins the job.** 78% hire whoever replies first; you take hours. Otto
+1. **Speed wins the job.** 78% hire whoever replies first; you take hours. Folvra
    takes seconds.
 2. **One inbox, every channel.** Website, Yelp, Angi, Thumbtack, Google — they
-   all email you. Otto catches them all.
+   all email you. Folvra catches them all.
 3. **In your voice, not a robot's.** Grounded in your business; never makes up
    prices; hands off anything sensitive.
 4. **You stay in control.** Approve-first until you trust it. Then autopilot.
-5. **Pays for itself in one job.** One rescued $600 job = 6 months of Otto.
+5. **Pays for itself in one job.** One rescued $600 job = 6 months of Folvra.
 
 ## Pricing (recap)
 
@@ -58,7 +58,7 @@ Send from a real founder address. First touch, then 2 follow-ups.
 > take hours (they're on a job, not at a desk). That's real money walking to a
 > competitor.
 >
-> I built Otto — an AI employee that replies to every new lead in under a minute,
+> I built Folvra — an AI employee that replies to every new lead in under a minute,
 > in your voice, and books the estimate on your calendar. Works off your existing
 > inbox, so it catches website, Yelp, Angi, and Thumbtack leads too.
 >
@@ -68,10 +68,10 @@ Send from a real founder address. First touch, then 2 follow-ups.
 > — {Name}
 
 **Email 2 (2 days later) — proof (subject: "re: the lead you missed")**
-> {FirstName} — here's a 40-second clip of Otto handling a real remodeling lead:
+> {FirstName} — here's a 40-second clip of Folvra handling a real remodeling lead:
 > reads it, replies in the owner's voice, offers two times, books it. [link]
 >
-> If you forward me one lead email, I'll show you what Otto would have sent back
+> If you forward me one lead email, I'll show you what Folvra would have sent back
 > — on your business, not a demo. Worth a look?
 
 **Email 3 (4 days later) — the breakup (subject: "should I close this out?")**
@@ -98,15 +98,15 @@ Send from a real founder address. First touch, then 2 follow-ups.
 
 Objections: *"I answer my own calls"* → "Totally — this is for the ones you
 can't get to: after-hours, on a roof, in the truck. That's where the leaks are."
-*"I already use {Jobber/HCP}"* → "Great, keep it — Otto sits on your inbox and
+*"I already use {Jobber/HCP}"* → "Great, keep it — Folvra sits on your inbox and
 just makes sure nobody waits hours for a reply. It books right onto your
 calendar."
 
 ## Demo script (5 minutes, the whole sale)
 
 1. **Hook (30s):** "Whoever replies first usually wins the job. Let's see how
-   fast you'd reply vs. Otto." Ask for one real (or typical) lead.
-2. **The replay (2m):** Paste it into the demo. Otto reads it, shows what it
+   fast you'd reply vs. Folvra." Ask for one real (or typical) lead.
+2. **The replay (2m):** Paste it into the demo. Folvra reads it, shows what it
    detected (lead? service? urgency?), writes the reply *in their voice*, offers
    times, books it. Point out: "That's what a customer would've gotten at 11pm —
    in 40 seconds, not 4 hours."
@@ -121,7 +121,7 @@ calendar."
 
 ## Sales / follow-up email (post-demo)
 
-> Great talking, {FirstName}. As promised — here's Otto set up for {Company}. It's
+> Great talking, {FirstName}. As promised — here's Folvra set up for {Company}. It's
 > in approve-first mode so nothing goes out without your OK. Try it on this week's
 > leads; if it saves you a job, it's paid for itself six times over. I'll check in
 > Friday. — {Name}
@@ -164,7 +164,7 @@ own lead."
   (they publish emails). 3-touch sequence above; book demos; demo closes.
 - **Niche down the winner.** Whichever vertical converted best (likely remodelers
   or HVAC), make a vertical landing page + tailored samples and go deep.
-- **Micro-content:** short "watch Otto handle a lead" clips on YouTube/TikTok/IG
+- **Micro-content:** short "watch Folvra handle a lead" clips on YouTube/TikTok/IG
   Reels tagged to the trade. The demo is inherently shareable.
 
 ### What to measure (and show YC)
@@ -191,5 +191,5 @@ above is built to produce exactly that in 3 weeks: a sharp, painful, expensive
 problem; a demo that converts in 5 minutes; founder-led distribution into
 reachable communities; and metrics (activation, booked-in-week-1, dollar-ROI
 testimonials) that prove pull. Ship the wedge, get 10 businesses booking real
-jobs with Otto, collect the "it booked me a $6k job while I slept" quotes — that
+jobs with Folvra, collect the "it booked me a $6k job while I slept" quotes — that
 is the application.

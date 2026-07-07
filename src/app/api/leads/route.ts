@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildInitialLeads, computeStats } from "@/lib/otto/workspace";
+import { buildInitialLeads, computeStats } from "@/lib/folvra/workspace";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

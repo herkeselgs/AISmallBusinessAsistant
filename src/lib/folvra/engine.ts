@@ -20,7 +20,7 @@ import {
 } from "./types";
 
 /**
- * The Otto engine. Runs against real Claude when ANTHROPIC_API_KEY is set,
+ * The Folvra engine. Runs against real Claude when ANTHROPIC_API_KEY is set,
  * otherwise falls back to a deterministic mock so the product is always
  * demoable. Model tiering: cheap/fast Haiku to triage, Opus to draft the reply.
  */
