@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
+  ClipboardPaste,
   Copy,
   Download,
   Globe,
   Mail,
+  MapPin,
   MessageSquare,
   Phone,
   Plus,
@@ -34,6 +36,18 @@ const YC_KEY = "folvra_yc_v1";
 const PLACES_KEY = "folvra_places_key";
 const mapsSearchUrl = (city: string, trade: string) =>
   `https://www.google.com/maps/search/${encodeURIComponent(`${trade} in ${city}`)}`;
+
+/**
+ * Bookmarklet the user saves once and clicks WHILE on a Google Maps results
+ * page. It runs in the Maps page context (the only way to read that page — a
+ * website cannot read another site's tab), scrapes the visible business cards
+ * (name, rating, reviews, phone, + full card text), and copies them as CSV so
+ * they can be pasted / "Paste from Google Maps" into Folvra. No API key.
+ * String.raw keeps regex backslashes intact.
+ */
+const GRAB_BOOKMARKLET =
+  "javascript:" +
+  String.raw`(function(){try{var f=document.querySelector('div[role="feed"]')||document.body;var cs=[].slice.call(f.querySelectorAll('a.hfpxzc'));if(!cs.length){cs=[].slice.call(f.querySelectorAll('a[href*="/maps/place/"]'));}if(!cs.length){alert('Folvra: no Google Maps results found. Open a Maps search results LIST, scroll it to load businesses, then click this again.');return;}var seen={},rows=[['business','rating','reviews','phone','notes']];cs.forEach(function(a){var name=a.getAttribute('aria-label')||'';if(!name||seen[name])return;seen[name]=1;var c=a.closest('div[role="article"]')||a.parentElement;var t=((c&&c.innerText)||'').replace(/\s*\n\s*/g,' | ');var rm=t.match(/(\d(?:\.\d)?)\s*\(?([\d,]+)\)?/);var pm=t.match(/(\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4})/);rows.push([name,rm?rm[1]:'',rm?rm[2].replace(/,/g,''):'',pm?pm[1]:'',t]);});var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');navigator.clipboard.writeText(csv).then(function(){alert('Folvra: grabbed '+(rows.length-1)+' businesses. Go back to Folvra and click "Paste from Google Maps".');},function(){window.prompt('Folvra: copy this, then paste into Folvra import:',csv);});}catch(e){alert('Folvra grab failed: '+e.message);}})();`;
 const TARGETS = { contacted: 30, called: 20, emailed: 10, sms: 5, demoBooked: 3, pilotStarted: 1 };
 
 function seedBlank(n: number): Prospect[] {
@@ -61,7 +75,9 @@ function coldSMS(p: Prospect): string {
 export function ProspectConsole() {
   const [rows, setRows] = useState<Prospect[]>([]);
   const loaded = useRef(false);
+  const bmRef = useRef<HTMLAnchorElement>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [mapsHelp, setMapsHelp] = useState(false);
 
   // finder state
   const [city, setCity] = useState("");
@@ -105,6 +121,11 @@ export function ProspectConsole() {
       /* ignore */
     }
   }, [placesKey]);
+
+  // Set the bookmarklet href directly on the DOM node (React strips javascript: hrefs).
+  useEffect(() => {
+    if (bmRef.current) bmRef.current.setAttribute("href", GRAB_BOOKMARKLET);
+  }, []);
 
   useEffect(() => {
     if (!loaded.current) return;
@@ -233,6 +254,28 @@ export function ProspectConsole() {
     setShowImport(false);
   }
 
+  async function pasteFromMaps() {
+    let text = "";
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      setShowImport(true);
+      return flash("Couldn't read clipboard — paste (Ctrl/Cmd+V) into the Import box instead.");
+    }
+    if (!text.trim()) return flash("Clipboard is empty — grab from Google Maps first.");
+    const parsed = parseImport(text, trade).map((p) => ({ ...p, source: "Google Maps" }));
+    if (!parsed.length) {
+      setImportText(text);
+      setShowImport(true);
+      return flash("Couldn't auto-read that — check it in the Import box.");
+    }
+    addProspects(parsed);
+  }
+
+  async function copyBookmarklet() {
+    await copyText(GRAB_BOOKMARKLET, "Bookmarklet code");
+  }
+
   async function copyText(text: string, label: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -312,8 +355,62 @@ export function ProspectConsole() {
           </button>
         </div>
 
+        {/* No-API: pull from Google Maps via a bookmarklet */}
+        <div className="mt-3 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink">
+              <MapPin className="h-4 w-4 text-brand-600" /> Pull from Google Maps — no API key
+            </span>
+            <a
+              href={mapsSearchUrl(city.trim() || "your city", trade.trim() || "hvac")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-ink/90"
+            >
+              <Globe className="h-3.5 w-3.5" /> Open Google Maps
+            </a>
+            <a
+              ref={bmRef}
+              href="#"
+              draggable
+              onClick={(e) => e.preventDefault()}
+              title="Drag me to your bookmarks bar (one time)"
+              className={cn(ghost, "cursor-grab")}
+            >
+              ⭳ Grab from Maps (drag to bookmarks)
+            </a>
+            <button onClick={copyBookmarklet} className={ghost}>
+              <Copy className="h-3.5 w-3.5" /> Copy code
+            </button>
+            <button
+              onClick={pasteFromMaps}
+              className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-600"
+            >
+              <ClipboardPaste className="h-3.5 w-3.5" /> Paste from Google Maps
+            </button>
+            <button onClick={() => setMapsHelp((v) => !v)} className={ghost}>
+              How?
+            </button>
+          </div>
+          {mapsHelp && (
+            <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs text-ink-soft">
+              <li>
+                <b>One time:</b> drag <b>&quot;Grab from Maps&quot;</b> to your browser&apos;s bookmarks
+                bar. (Or click <b>Copy code</b>, make a new bookmark, and paste it as the URL.)
+              </li>
+              <li>Type a city + trade above, then click <b>Open Google Maps</b>.</li>
+              <li>On Maps, <b>scroll the results list down</b> to load businesses — the more you scroll, the more you get.</li>
+              <li>Click your <b>Grab from Maps</b> bookmark → it copies every business it sees.</li>
+              <li>Come back here → click <b>Paste from Google Maps</b> → they drop into the spreadsheet.</li>
+            </ol>
+          )}
+        </div>
+
         {/* Google Maps data key (stored in this browser only — no redeploy needed) */}
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="w-full text-[11px] font-medium text-ink-faint">
+            Or, for fully automatic bulk results, paste a Google Maps API key:
+          </span>
           <input
             value={placesKey}
             onChange={(e) => setPlacesKey(e.target.value)}
