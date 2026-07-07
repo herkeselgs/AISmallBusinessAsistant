@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-sans);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: theme("colors.paper");
+  color: theme("colors.ink.DEFAULT");
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Subtle grid/dot texture used behind hero sections */
+.bg-dotted {
+  background-image: radial-gradient(theme("colors.line") 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Thin custom scrollbars inside demo panes */
+.scroll-slim::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: theme("colors.line");
+  border-radius: 999px;
+}
