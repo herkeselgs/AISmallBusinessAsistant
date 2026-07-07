@@ -24,8 +24,10 @@ export function channelFromEmail(msg: InboundMessage): LeadChannel {
 
 let idCounter = 1000;
 function nextId() {
+  // Random suffix keeps IDs unique across serverless cold starts (Vercel), so
+  // React keys never collide when the client prepends newly-generated leads.
   idCounter += 1;
-  return `lead_${idCounter}`;
+  return `lead_${idCounter}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /** Turn one inbound message into a fully-processed lead record. */
