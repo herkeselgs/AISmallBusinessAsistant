@@ -1,84 +1,74 @@
 # CHECKPOINT — Folvra
 
-_Last updated: 2026-07-07 (session #3 — prospect finder + outreach spreadsheet)_
+_Last updated: 2026-07-08 (session #5 — Live Call Copilot)_
 
 Live domain: **https://folvra.com** · Branch: `claude/ai-employee-startup-sdk3er`
 
-## Status: ✅ STABLE — build + 24 tests pass, everything committed & pushed
+## Status: ✅ STABLE — build + 45 tests pass, everything committed & pushed
 
-## Completed (this session — /founder prospect finder + spreadsheet)
-- **Prospect finder** (`/api/prospects` + "Find prospects" section on /founder):
-  enter city/area + trade + max (default 30) → returns real businesses. Provider
-  order: **Google Places** (if `GOOGLE_PLACES_API_KEY` set) → **OpenStreetMap**
-  (Nominatim + Overpass, free, no key) → graceful `{ok:false}` so the UI always
-  falls back to CSV/paste. **Never fabricates data** (real sources only); missing
-  owner/email → blank or "Unknown"; every row carries a `source`.
-- **Full outreach spreadsheet** (localStorage `folvra_prospects_v1`, seeded 30 rows):
-  24 columns incl. all requested fields, editable cells, status dropdown, checkbox
-  columns, follow-up date, notes, next action. Sortable (click header) + text filter.
-  Per-row **actions**: Call (tel:), Email (mailto:), Open website, Copy cold email,
-  Copy SMS (both customized w/ business + trade), and quick-mark Contacted / Demo /
-  Pilot. Add row / delete row / reset.
-- **Preview + add flow:** found prospects show in a preview table with per-row
-  checkboxes → "Add selected" / "Add all"; **dedupe** by name + phone/website;
-  existing manual rows preserved.
-- **Import/Export:** Export CSV (download), **Copy for Google Sheets** (TSV),
-  Import CSV/paste (header-mapped or headerless with phone/email/website detection).
-- **Summary panel:** total / contacted / replied / demos booked / demos done /
-  pilots / paying + conversion rates + "today's remaining" chips (30/20/10/5/3/1).
-- **YC sync:** "Sync to YC tracker" writes outreach-derived counts into
-  `folvra_yc_v1` (merges, preserves testimonials/quotes/etc.); reload /yc to see.
-- `.env.example` documents optional `GOOGLE_PLACES_API_KEY` (no key required).
+## The product (routes)
+- `/` landing (6-vertical live demo) · `/dashboard` leads inbox (approve-first) ·
+  `/pilot` pilot/demo request (mailto) · `/founder` 🔒 outreach cockpit · `/yc` 🔒 traction.
+- Runs fully in **mock mode with no API key**. No Gmail/Calendar/Supabase/auth/payments.
 
-## Verification (this session)
-- `npm test` → **24/24 pass** (added 12 prospect tests: dedupe, merge, CSV/TSV,
-  import parsing incl. round-trip, summarize, YC mapping).
-- `npm run build` → **success**; `/api/prospects` + all pages compile.
-- Runtime (local, same-process): `/ /dashboard /pilot /founder /yc` all **200**.
-- Finder **fails gracefully**: valid body w/ no key + blocked outbound →
-  `{ok:false, reason:"…use CSV/paste"}` at 200; bad body → 400. (In this sandbox
-  outbound is firewalled; on Vercel OSM will return real results, Places if keyed.)
-- /founder renders (screenshot): finder + summary + 30-row spreadsheet + actions.
+## /founder now contains
+1. **Find prospects** — Google Maps via in-app Places key OR the **"Pull from Google
+   Maps" bookmarklet** (no key) OR CSV/paste import. Real data only.
+2. **Live Call Copilot** (this session) — guided cold-calling. See below.
+3. **Outreach spreadsheet** — 24 cols, localStorage, per-row actions, CSV/TSV, YC sync.
+4. Scripts (call/voicemail/email/SMS/objections/demo checklist/etc.) + non-negotiables.
 
-## Prior sessions (still in place)
-Otto→Folvra rename; positioning "follows up with every lead before it goes cold";
-6-vertical demo; /pilot, /founder, /yc, /dashboard; approve-first dashboard; mock
-fallback. No Gmail/Calendar/Supabase/auth/payments.
+## Completed this session — Live Call Copilot
+- **Logic** (`src/lib/folvra/copilot.ts`, fully unit-tested): the 15-line script
+  (open/discovery/close, `{business}` rendered), objection detection (7 objections →
+  exact suggested responses), pain/lead-source/workflow/interest signal detection,
+  approximate **word-match highlighting** (fuzzy/paraphrase tolerant), and
+  **after-call summary** builder (outcome→status+flags, pain level, next action,
+  follow-up date, follow-up SMS + email, notes block).
+- **UI** (`src/components/call-copilot.tsx`): 3-column live view (Prospect / Live
+  guide / Intelligence), consent gate, **Web Speech API** (SpeechRecognition) with
+  turn-based speaker mode (My turn / Prospect speaking), word-by-word highlight as
+  you speak, live suggested response as the prospect talks, progress bar, outcome
+  buttons, **manual textarea fallback** when speech is unavailable, keyboard
+  shortcuts (Space=said this, L=prospect, M=my turn, E=end), copy buttons, and a
+  session **stats bar** (localStorage `folvra_call_stats_v1`).
+- **Spreadsheet integration:** End call → writes contacted/called/replied/demoBooked/
+  pilotOffered/pilotStarted, status, next action, follow-up date, and a dated notes
+  block to the selected prospect row (via the shared ProspectConsole `update`).
+- Also present but unwired: `src/components/roi-calculator.tsx` (ROI calculator built
+  right before the pivot — valid component, not imported anywhere; wire into landing
+  later if wanted).
+
+## Verification
+- `npm test` → **45/45 pass** (24 new copilot tests: objection detection, word-match/
+  highlight, summary generation).
+- `npm run build` → **success**; all routes prerender (`/founder` 19.3 kB).
+- Runtime: `/ /dashboard /pilot /founder /yc` all **200**; copilot renders SSR.
+- Works **without** speech recognition (manual mode) and **without** any API key.
 
 ## Files changed / added this session
-- Added: `src/lib/folvra/prospects.ts`, `src/lib/folvra/prospects.test.ts`,
-  `src/app/api/prospects/route.ts`, `src/components/prospect-console.tsx`.
-- Edited: `src/app/founder/page.tsx` (render ProspectConsole instead of the old
-  tracker; keeps CopyBlock scripts), `.env.example`.
-- `src/components/founder-console.tsx` still exports `CopyBlock` (used) and the old
-  `FounderConsole` (now unused, harmless).
+- Added: `src/lib/folvra/copilot.ts`, `src/lib/folvra/copilot.test.ts`,
+  `src/components/call-copilot.tsx`, `src/components/roi-calculator.tsx`.
+- Edited: `src/components/prospect-console.tsx` (import + "Live Call Copilot" section).
 
 ## Known bugs / limitations
-- **None blocking.** Auto-search returns few/no results via OSM for thinly-mapped
-  US trades — that's expected; **CSV/paste is the reliable workhorse**, and Google
-  Places (optional key) gives full data.
-- Trackers persist in **browser localStorage only** (per-browser). Export CSV to back
-  up / move devices.
-- YC sync writes localStorage; /yc must be reloaded to reflect new numbers
-  (no cross-tab live refresh by design).
-
-## Manual actions for the founder (optional)
-- **Best prospect data:** add `GOOGLE_PLACES_API_KEY` in Vercel env → redeploy.
-  Get it at console.cloud.google.com (Places API, New). Without it, OSM + CSV work.
-- Confirm latest deploy is live on folvra.com (should show 6-vertical demo + the new
-  /founder finder). If stale → Vercel → Deployments → Redeploy.
+- **None blocking.** Speech recognition is **Chrome/Edge only** (Web Speech API);
+  Safari/Firefox fall back to manual typing — the copilot still fully works.
+- Speaker detection is turn-based (button/keyboard driven), not voice biometrics — by
+  design. No auto-advance on speech; you press Space / "I said this".
+- Objection/summary logic is deterministic (no AI call) — reliable, offline; could be
+  AI-enhanced later behind ANTHROPIC_API_KEY (not required).
+- Call stats + prospects persist in **browser localStorage only**.
 
 ## Exact next prompt to resume
-> "Resume Folvra. Read CHECKPOINT.md. /founder now has a prospect finder + full
-> outreach spreadsheet (localStorage) + YC sync. Next, in order: (1) wire the
-> pilot form to a real capture (Formspree or a Vercel route that emails me) + a
-> /thanks page; (2) optional: add a Yelp Fusion provider to the finder as another
-> keyed source; (3) only after 2–3 pilots, real Gmail+Calendar behind Google OAuth
-> (test mode). Keep mock fallback + never fabricate prospect data; no payments/CRM."
+> "Resume Folvra. Read CHECKPOINT.md. /founder has prospect finder + spreadsheet +
+> Live Call Copilot. Options next: (1) wire the ROI calculator into the landing page;
+> (2) let the copilot optionally call an ANTHROPIC_API_KEY server route to polish the
+> after-call summary (keep the deterministic fallback); (3) wire pilot-form submits to
+> a real capture (Formspree / Vercel route) + a /thanks page. Keep mock fallback; no
+> payments/CRM; don't break existing routes."
 
-## What to do next (tomorrow morning)
-Open **/founder**. Try "Find prospects" (Fort Myers, FL / HVAC). If auto-search is
-thin, use **Import CSV / paste**: pull a list from Google Maps and paste it — the
-spreadsheet fills automatically. Then work the rows: Call/Email/Copy-SMS, mark
-Contacted/Demo/Pilot, hit the non-negotiables (30 contacted / 3 demos / 1 pilot),
-and click **Sync to YC tracker** at end of day.
+## What to do next (you)
+Open **/founder → Live Call Copilot**, pick a prospect, hit **Start Call Copilot**,
+say the consent line, and dial. Use Space to advance your lines, L when the prospect
+talks, M for your turn, E to end + save. When you can call, run your non-negotiables.

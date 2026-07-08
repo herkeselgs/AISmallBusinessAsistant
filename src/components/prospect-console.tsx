@@ -18,6 +18,7 @@ import {
   Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CallCopilot } from "@/components/call-copilot";
 import {
   COLUMNS,
   blankProspect,
@@ -559,6 +560,17 @@ export function ProspectConsole() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Live Call Copilot */}
+      <section>
+        <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-ink">
+          Live Call Copilot
+          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
+            guided cold calls
+          </span>
+        </h3>
+        <CallCopilot prospects={rows} onUpdate={update} />
       </section>
 
       {/* Summary */}
