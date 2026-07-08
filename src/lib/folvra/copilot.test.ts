@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildSummary,
+  demoLikelihood,
   detectObjection,
   nextQuestion,
   painLevel,
   renderLine,
+  ruleSuggest,
   SCRIPT,
   wordMatch,
   type CallSession,
@@ -86,6 +88,34 @@ describe("painLevel", () => {
     expect(painLevel(0)).toBe("low");
     expect(painLevel(2)).toBe("medium");
     expect(painLevel(5)).toBe("high");
+  });
+});
+
+describe("demoLikelihood", () => {
+  it("high when interested + pain", () => {
+    expect(demoLikelihood(2, true, [])).toBe("high");
+  });
+  it("low when not interested", () => {
+    expect(demoLikelihood(1, false, ["Not interested"])).toBe("low");
+  });
+});
+
+describe("ruleSuggest (shared fallback)", () => {
+  it("returns the objection response and marks source rule", () => {
+    const s = ruleSuggest("can you just send me some info");
+    expect(s.source).toBe("rule");
+    expect(s.objectionType).toBe("send_info");
+    expect(s.recommendedAction).toBe("ask_for_demo");
+    expect(s.suggestedResponse.length).toBeGreaterThan(10);
+  });
+  it("suggests the demo ask when interested", () => {
+    const s = ruleSuggest("yeah that sounds good, tell me more");
+    expect(s.recommendedAction).toBe("ask_for_demo");
+  });
+  it("falls back to a discovery question with no objection", () => {
+    const s = ruleSuggest("hello");
+    expect(s.recommendedAction).toBe("continue_discovery");
+    expect(s.nextBestQuestion.length).toBeGreaterThan(5);
   });
 });
 

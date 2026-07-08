@@ -170,6 +170,92 @@ export function painLevel(score: number): "low" | "medium" | "high" {
   return "low";
 }
 
+export function demoLikelihood(
+  painScore: number,
+  interest: boolean,
+  objectionLabels: string[]
+): "low" | "medium" | "high" {
+  let s = painScore + (interest ? 2 : 0);
+  if (objectionLabels.some((o) => /not interested/i.test(o))) s -= 3;
+  if (s >= 3) return "high";
+  if (s >= 1) return "medium";
+  return "low";
+}
+
+/* --------------- Suggestion (shared by client + AI route) -------------- */
+
+export type RecommendedAction =
+  | "continue_discovery"
+  | "ask_for_demo"
+  | "ask_for_pilot"
+  | "send_info"
+  | "handle_objection"
+  | "end_call"
+  | "schedule_follow_up";
+
+export interface Suggestion {
+  source: "ai" | "rule";
+  suggestedResponse: string;
+  nextBestQuestion: string;
+  detectedIntent: string;
+  objectionType: string | null;
+  confidence: number;
+  recommendedAction: RecommendedAction;
+  shortReason: string;
+}
+
+const DEMO_ASK =
+  "Can I show you what Folvra would say to one of your actual leads? It takes five minutes.";
+
+/**
+ * Deterministic, instant suggestion from the rule engine. Used as the always-on
+ * fallback in the UI and inside the AI route when the model is unavailable.
+ */
+export function ruleSuggest(latest: string, lineIndex = -1): Suggestion {
+  const obj = detectObjection(latest);
+  const nq = nextQuestion(lineIndex) ?? DEMO_ASK;
+  if (obj) {
+    const action: RecommendedAction =
+      obj.key === "send_info"
+        ? "ask_for_demo"
+        : obj.key === "not_interested"
+        ? "schedule_follow_up"
+        : "handle_objection";
+    return {
+      source: "rule",
+      suggestedResponse: obj.response,
+      nextBestQuestion: nq,
+      detectedIntent: obj.key,
+      objectionType: obj.key,
+      confidence: 0.55,
+      recommendedAction: action,
+      shortReason: `Objection: ${obj.label}`,
+    };
+  }
+  if (isInterested(latest)) {
+    return {
+      source: "rule",
+      suggestedResponse: DEMO_ASK,
+      nextBestQuestion: nq,
+      detectedIntent: "interested",
+      objectionType: null,
+      confidence: 0.5,
+      recommendedAction: "ask_for_demo",
+      shortReason: "Positive signal — go for the demo",
+    };
+  }
+  return {
+    source: "rule",
+    suggestedResponse: nq,
+    nextBestQuestion: nq,
+    detectedIntent: "discovery",
+    objectionType: null,
+    confidence: 0.4,
+    recommendedAction: "continue_discovery",
+    shortReason: "No objection — keep discovering",
+  };
+}
+
 /* --------------------- Word match / highlight -------------------- */
 
 const norm = (w: string) => w.toLowerCase().replace(/[^a-z0-9']/g, "");

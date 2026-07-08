@@ -1,10 +1,10 @@
 # CHECKPOINT — Folvra
 
-_Last updated: 2026-07-08 (session #5 — Live Call Copilot)_
+_Last updated: 2026-07-08 (session #6 — AI live suggestions for Call Copilot)_
 
 Live domain: **https://folvra.com** · Branch: `claude/ai-employee-startup-sdk3er`
 
-## Status: ✅ STABLE — build + 45 tests pass, everything committed & pushed
+## Status: ✅ STABLE — build + 50 tests pass, everything committed & pushed
 
 ## The product (routes)
 - `/` landing (6-vertical live demo) · `/dashboard` leads inbox (approve-first) ·
@@ -14,9 +14,39 @@ Live domain: **https://folvra.com** · Branch: `claude/ai-employee-startup-sdk3e
 ## /founder now contains
 1. **Find prospects** — Google Maps via in-app Places key OR the **"Pull from Google
    Maps" bookmarklet** (no key) OR CSV/paste import. Real data only.
-2. **Live Call Copilot** (this session) — guided cold-calling. See below.
+2. **Live Call Copilot** — guided cold-calling with **AI live suggestions** (this
+   session) layered on top of the deterministic rule engine. See below.
 3. **Outreach spreadsheet** — 24 cols, localStorage, per-row actions, CSV/TSV, YC sync.
 4. Scripts (call/voicemail/email/SMS/objections/demo checklist/etc.) + non-negotiables.
+
+## Completed this session (#6) — AI live suggestions
+- **Two new API routes** (`src/app/api/call-copilot/`):
+  - `POST /suggest` — live per-utterance suggestion. Adapts to prospect, trade, call
+    stage, recent transcript, latest utterance, detected objection. Returns
+    `{source, suggestedResponse, nextBestQuestion, detectedIntent, objectionType,
+    confidence, recommendedAction, shortReason}`. Claude (Haiku, 6s timeout, no
+    retries) when `ANTHROPIC_API_KEY` is set; **deterministic `ruleSuggest` fallback**
+    otherwise or on any error/timeout. Supports `refine` = shorter / more_direct /
+    ask_for_demo.
+  - `POST /summary` — after-call summary. **Always** computes deterministic
+    `buildSummary` (flags/status/follow-up-date stay reliable for the spreadsheet);
+    when a key is set Claude (Opus draft, 18s timeout) improves only the prose fields
+    (summary, pain, objections, workflow, lead sources, next action, SMS, email,
+    demoLikelihood). Falls back to deterministic on any failure.
+- **Shared logic** added to `copilot.ts`: `Suggestion`/`RecommendedAction` types,
+  `ruleSuggest()` (objection→response, interest→demo ask, else next question — used by
+  the client for the instant suggestion AND by the route as the AI fallback), and
+  `demoLikelihood()`. All unit-tested.
+- **UI** (`src/components/call-copilot.tsx`): right column now shows **"Instant
+  suggestion (rules)"** immediately + **"AI refined suggestion"** with a "Refining
+  response…" loading state. AI fires on prospect pause (1.2s debounce, ≥1.5s between
+  calls, seq-guard drops stale in-flight responses, 7s abort). Controls: **Use AI**
+  toggle, Regenerate, Shorter, More direct, Ask for demo, Use AI / Use this, copy
+  buttons. The big highlighted script line defaults to best available
+  (AI → rule → next script line). End Call fires the AI summary **non-blocking** after
+  the deterministic save (shows "AI refining…"; upgrades notes when it returns).
+- **AI is strictly an enhancement — never a dependency.** No key = full product via
+  rules; key present = polished suggestions/summaries. Key stays server-side.
 
 ## Completed this session — Live Call Copilot
 - **Logic** (`src/lib/folvra/copilot.ts`, fully unit-tested): the 15-line script
@@ -40,33 +70,41 @@ Live domain: **https://folvra.com** · Branch: `claude/ai-employee-startup-sdk3e
   later if wanted).
 
 ## Verification
-- `npm test` → **45/45 pass** (24 new copilot tests: objection detection, word-match/
-  highlight, summary generation).
-- `npm run build` → **success**; all routes prerender (`/founder` 19.3 kB).
-- Runtime: `/ /dashboard /pilot /founder /yc` all **200**; copilot renders SSR.
+- `npm test` → **50/50 pass** (new: `demoLikelihood`, `ruleSuggest` shared fallback).
+- `npm run build` → **success**; `/founder` 21.2 kB; both `/api/call-copilot/*` routes
+  registered as dynamic (server-rendered on demand).
+- Runtime (no key): `/api/call-copilot/suggest` returns `source:"rule"` with the right
+  objection/demo handling; `/api/call-copilot/summary` returns the full deterministic
+  summary; `/founder` **200**.
 - Works **without** speech recognition (manual mode) and **without** any API key.
 
-## Files changed / added this session
-- Added: `src/lib/folvra/copilot.ts`, `src/lib/folvra/copilot.test.ts`,
-  `src/components/call-copilot.tsx`, `src/components/roi-calculator.tsx`.
-- Edited: `src/components/prospect-console.tsx` (import + "Live Call Copilot" section).
+## Files changed / added this session (#6)
+- Added: `src/app/api/call-copilot/suggest/route.ts`,
+  `src/app/api/call-copilot/summary/route.ts`.
+- Edited: `src/lib/folvra/copilot.ts` (Suggestion/RecommendedAction/ruleSuggest/
+  demoLikelihood), `src/lib/folvra/copilot.test.ts`, `src/components/call-copilot.tsx`
+  (AI suggestion layer + AI after-call summary).
 
 ## Known bugs / limitations
 - **None blocking.** Speech recognition is **Chrome/Edge only** (Web Speech API);
   Safari/Firefox fall back to manual typing — the copilot still fully works.
 - Speaker detection is turn-based (button/keyboard driven), not voice biometrics — by
   design. No auto-advance on speech; you press Space / "I said this".
-- Objection/summary logic is deterministic (no AI call) — reliable, offline; could be
-  AI-enhanced later behind ANTHROPIC_API_KEY (not required).
+- **AI suggestions/summary require `ANTHROPIC_API_KEY` (server-side env only).**
+  Without it the instant rule engine drives everything — the "AI refined" block shows
+  "AI unavailable (no API key set)" and the rule suggestion is used. Nothing breaks.
+- AI is latency-gated (debounced, ≥1.5s apart, 6–7s timeout) and never blocks the UI;
+  the rule suggestion is always shown first and instantly.
 - Call stats + prospects persist in **browser localStorage only**.
 
 ## Exact next prompt to resume
 > "Resume Folvra. Read CHECKPOINT.md. /founder has prospect finder + spreadsheet +
-> Live Call Copilot. Options next: (1) wire the ROI calculator into the landing page;
-> (2) let the copilot optionally call an ANTHROPIC_API_KEY server route to polish the
-> after-call summary (keep the deterministic fallback); (3) wire pilot-form submits to
-> a real capture (Formspree / Vercel route) + a /thanks page. Keep mock fallback; no
-> payments/CRM; don't break existing routes."
+> Live Call Copilot WITH AI live suggestions + AI after-call summary (both behind
+> ANTHROPIC_API_KEY, deterministic fallback when absent). Options next: (1) wire the
+> ROI calculator into the landing page; (2) wire pilot-form submits to a real capture
+> (Formspree / Vercel route) + a /thanks page; (3) set ANTHROPIC_API_KEY in Vercel and
+> live-test the AI copilot on a real call. Keep mock fallback; no payments/CRM; don't
+> break existing routes."
 
 ## What to do next (you)
 Open **/founder → Live Call Copilot**, pick a prospect, hit **Start Call Copilot**,

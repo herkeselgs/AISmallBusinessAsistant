@@ -9,8 +9,10 @@ import {
   MicOff,
   Phone,
   PhoneOff,
+  RefreshCw,
   SkipForward,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Prospect } from "@/lib/folvra/prospects";
@@ -29,14 +31,17 @@ import {
   type CallSession,
   type CallSummary,
   type Outcome,
+  type Suggestion,
 } from "@/lib/folvra/copilot";
 
 const STATS_KEY = "folvra_call_stats_v1";
+const DEMO_ASK = "Can I show you what Folvra would say to one of your actual leads? It takes five minutes.";
 type Stats = { calls: number; answers: number; demos: number; followups: number; notInterested: number; pilotsOffered: number };
 const ZERO_STATS: Stats = { calls: 0, answers: 0, demos: 0, followups: 0, notInterested: 0, pilotsOffered: 0 };
 
 type Phase = "setup" | "consent" | "live" | "summary";
 type Mode = "you" | "prospect";
+type Refine = "shorter" | "more_direct" | "ask_for_demo";
 
 export function CallCopilot({
   prospects,
@@ -55,14 +60,24 @@ export function CallCopilot({
   const [spokenLine, setSpokenLine] = useState("");
   const [interim, setInterim] = useState("");
   const [prospectText, setProspectText] = useState("");
-  const [suggestion, setSuggestion] = useState("");
+  const [suggestion, setSuggestion] = useState(""); // instant rule suggestion
   const [objection, setObjection] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [listening, setListening] = useState(false);
   const [summary, setSummary] = useState<CallSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [stats, setStats] = useState<Stats>(ZERO_STATS);
 
-  // refs mirror state so speech/keyboard callbacks never go stale
+  // AI layer
+  const [aiEnabled, setAiEnabled] = useState(true);
+  const [aiSug, setAiSug] = useState<Suggestion | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiUnavailable, setAiUnavailable] = useState(false);
+
+  // the line to say / highlight in the middle column
+  const [sayText, setSayText] = useState("");
+
+  // refs so speech/keyboard/AI callbacks never go stale
   const recRef = useRef<any>(null);
   const supportedRef = useRef(false);
   const phaseRef = useRef<Phase>("setup");
@@ -72,13 +87,22 @@ export function CallCopilot({
   const prospectRef = useRef("");
   const objectionsSeen = useRef<Set<string>>(new Set());
   const listeningRef = useRef(false);
+  const aiEnabledRef = useRef(true);
+  const aiSeqRef = useRef(0);
+  const aiTimerRef = useRef<number | null>(null);
+  const lastAiRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const sayingSuggestionRef = useRef(false);
+  const scheduleAiRef = useRef<() => void>(() => {});
 
   phaseRef.current = phase;
   modeRef.current = mode;
   lineRef.current = lineIndex;
+  aiEnabledRef.current = aiEnabled;
 
   const business = selected?.business || "your company";
   const currentLine = renderLine(SCRIPT[lineIndex]?.text ?? "", business);
+  const bestText = aiEnabled && aiSug ? aiSug.suggestedResponse : suggestion || currentLine;
 
   useEffect(() => {
     try {
@@ -89,7 +113,7 @@ export function CallCopilot({
     }
   }, []);
 
-  const refreshIntel = useCallback((full: string, live: string) => {
+  const refreshIntel = useCallback((live: string) => {
     const obj = detectObjection(live);
     if (obj) {
       objectionsSeen.current.add(obj.label);
@@ -97,16 +121,81 @@ export function CallCopilot({
       setSuggestion(obj.response);
     } else {
       setObjection(null);
-      if (isInterested(live)) {
-        setSuggestion("Great — can I show you what Folvra would say to one of your actual leads? Takes 5 minutes, and the pilot's free.");
-      } else {
-        const nq = nextQuestion(lineRef.current);
-        setSuggestion(nq ?? "Go for the close: does today or tomorrow work better?");
-      }
+      setSuggestion(isInterested(live) ? DEMO_ASK : nextQuestion(lineRef.current) ?? DEMO_ASK);
     }
   }, []);
 
-  // Set up speech recognition once.
+  const callAi = useCallback(
+    async (refine?: Refine) => {
+      if (!selected) return;
+      lastAiRef.current = Date.now();
+      const seq = ++aiSeqRef.current;
+      setAiLoading(true);
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      const timeout = window.setTimeout(() => ctrl.abort(), 7000);
+      try {
+        const res = await fetch("/api/call-copilot/suggest", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          signal: ctrl.signal,
+          body: JSON.stringify({
+            prospect: {
+              businessName: selected.business,
+              ownerName: selected.owner,
+              trade: selected.trade,
+              phone: selected.phone,
+              website: selected.website,
+              notes: selected.notes,
+            },
+            callState: {
+              currentStage: SCRIPT[lineRef.current]?.phase ?? "discovery",
+              currentGoal: "book a 5-minute demo",
+              mode: modeRef.current === "prospect" ? "prospect_speaking" : "my_turn",
+            },
+            transcript: [{ speaker: "prospect", text: prospectRef.current.slice(-800) }],
+            latestProspectUtterance: prospectRef.current.slice(-500),
+            detectedObjection: detectObjection(prospectRef.current)?.key ?? null,
+            previousSuggestion: aiSug?.suggestedResponse,
+            refine: refine ?? null,
+            lineIndex: lineRef.current,
+          }),
+        });
+        const data = (await res.json()) as Suggestion;
+        if (seq !== aiSeqRef.current) return; // stale
+        setAiSug(data);
+        setAiUnavailable(data.source !== "ai");
+      } catch {
+        if (seq === aiSeqRef.current) {
+          /* keep previous AI suggestion; rules still cover it */
+        }
+      } finally {
+        window.clearTimeout(timeout);
+        if (seq === aiSeqRef.current) setAiLoading(false);
+      }
+    },
+    [selected, aiSug]
+  );
+
+  const scheduleAi = useCallback(() => {
+    if (!aiEnabledRef.current) return;
+    if (aiTimerRef.current) window.clearTimeout(aiTimerRef.current);
+    aiTimerRef.current = window.setTimeout(() => {
+      if (modeRef.current === "prospect" && prospectRef.current.trim().length > 3) {
+        if (Date.now() - lastAiRef.current >= 1500) callAi();
+        else {
+          // enforce min gap between calls
+          aiTimerRef.current = window.setTimeout(() => {
+            if (modeRef.current === "prospect") callAi();
+          }, 1500);
+        }
+      }
+    }, 1200);
+  }, [callAi]);
+  scheduleAiRef.current = scheduleAi;
+
+  // speech recognition setup (once)
   useEffect(() => {
     const SR = (typeof window !== "undefined" && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)) || null;
     if (!SR) return;
@@ -132,9 +221,12 @@ export function CallCopilot({
         if (fin) {
           prospectRef.current += fin;
           setProspectText(prospectRef.current);
+          refreshIntel(prospectRef.current);
+          scheduleAiRef.current();
+        } else {
+          refreshIntel(prospectRef.current + " " + intr);
         }
         setInterim(intr);
-        refreshIntel(prospectRef.current, prospectRef.current + " " + intr);
       }
     };
     r.onend = () => {
@@ -181,21 +273,35 @@ export function CallCopilot({
     setSpokenLine("");
     setInterim("");
   }
-
+  function setScriptLine(i: number) {
+    setSayText(renderLine(SCRIPT[i]?.text ?? "", business));
+  }
   function advanceLine() {
-    setLineIndex((i) => Math.min(i + 1, SCRIPT.length - 1));
+    setLineIndex((i) => {
+      const ni = Math.min(i + 1, SCRIPT.length - 1);
+      lineRef.current = ni;
+      setScriptLine(ni);
+      return ni;
+    });
     resetTurn();
   }
 
   const iSaidThis = useCallback(() => {
+    if (sayingSuggestionRef.current) {
+      sayingSuggestionRef.current = false;
+      setScriptLine(lineRef.current);
+      resetTurn();
+      return;
+    }
     const line = SCRIPT[lineRef.current];
     if (line?.kind === "ask") {
       setMode("prospect");
       modeRef.current = "prospect";
+      resetTurn();
     } else {
       advanceLine();
     }
-    resetTurn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const goProspect = useCallback(() => {
@@ -204,12 +310,21 @@ export function CallCopilot({
     setInterim("");
   }, []);
 
-  const goMyTurn = useCallback(() => {
-    // finalize + move to next line, back to me
-    advanceLine();
+  function useResponse(text: string) {
+    sayingSuggestionRef.current = true;
+    setSayText(text);
     setMode("you");
     modeRef.current = "you";
-  }, []);
+    resetTurn();
+  }
+  const goMyTurn = useCallback(() => {
+    sayingSuggestionRef.current = true;
+    setSayText(aiEnabledRef.current && aiSug ? aiSug.suggestedResponse : suggestion || currentLine);
+    setMode("you");
+    modeRef.current = "you";
+    resetTurn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiSug, suggestion, currentLine]);
 
   function start() {
     if (!selected) return;
@@ -219,6 +334,7 @@ export function CallCopilot({
     setPhase("live");
     setLineIndex(0);
     lineRef.current = 0;
+    setScriptLine(0);
     setMode("you");
     modeRef.current = "you";
     prospectRef.current = "";
@@ -226,6 +342,9 @@ export function CallCopilot({
     objectionsSeen.current = new Set();
     setObjection(null);
     setSuggestion(nextQuestion(-1) ?? "");
+    setAiSug(null);
+    setAiUnavailable(false);
+    sayingSuggestionRef.current = false;
     setOutcome(null);
     resetTurn();
     startListening();
@@ -250,16 +369,17 @@ export function CallCopilot({
       workflow: detectWorkflow(prospectRef.current),
       interest: isInterested(prospectRef.current),
     };
-    const sum = buildSummary(session);
+    const det = buildSummary(session);
     const priorNotes = (selected.notes || "").trim();
-    onUpdate(selected.id, {
-      ...sum.flags,
-      status: sum.status,
-      nextAction: sum.nextAction,
-      followUp: sum.followUpDate || selected.followUp,
-      notes: priorNotes ? `${sum.notes}\n${priorNotes}` : sum.notes,
-    });
-    // stats
+    const save = (sum: CallSummary) =>
+      onUpdate(selected.id, {
+        ...sum.flags,
+        status: sum.status,
+        nextAction: sum.nextAction,
+        followUp: sum.followUpDate || selected.followUp,
+        notes: priorNotes ? `${sum.notes}\n${priorNotes}` : sum.notes,
+      });
+    save(det);
     setStats((prev) => {
       const s = { ...prev, calls: prev.calls + 1 };
       if (["answered", "demo_booked", "follow_up", "pilot_offered", "pilot_started"].includes(finalOutcome)) s.answers += 1;
@@ -274,8 +394,34 @@ export function CallCopilot({
       }
       return s;
     });
-    setSummary(sum);
+    setSummary(det);
     setPhase("summary");
+
+    // AI improvement (optional, non-blocking)
+    if (aiEnabledRef.current) {
+      setSummaryLoading(true);
+      const ctrl = new AbortController();
+      const to = window.setTimeout(() => ctrl.abort(), 20000);
+      fetch("/api/call-copilot/summary", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        signal: ctrl.signal,
+        body: JSON.stringify(session),
+      })
+        .then((r) => r.json())
+        .then((ai: CallSummary & { source?: string }) => {
+          if (ai && ai.source === "ai" && ai.summary) {
+            setSummary(ai);
+            save(ai);
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          window.clearTimeout(to);
+          setSummaryLoading(false);
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, outcome, onUpdate]);
 
   // keyboard shortcuts during live call
@@ -305,17 +451,16 @@ export function CallCopilot({
     setOutcome(null);
     setProspectText("");
     prospectRef.current = "";
+    setAiSug(null);
     resetTurn();
   }
 
-  const wm = wordMatch(currentLine, spokenLine + " " + (mode === "you" ? interim : ""));
-  const statusLabel =
-    phase !== "live" ? "" : mode === "you" ? "Your turn" : "Listening to prospect";
+  const wm = wordMatch(sayText || currentLine, spokenLine + " " + (mode === "you" ? interim : ""));
+  const statusLabel = phase !== "live" ? "" : aiLoading && mode === "prospect" ? "Thinking" : mode === "you" ? "Your turn" : "Listening to prospect";
   const progress = Math.round(((lineIndex + 1) / SCRIPT.length) * 100);
 
   return (
     <div>
-      {/* stats bar */}
       <div className="mb-3 flex flex-wrap gap-2 text-xs">
         <StatPill label="Calls" v={stats.calls} />
         <StatPill label="Answers" v={stats.answers} />
@@ -326,19 +471,14 @@ export function CallCopilot({
       </div>
 
       {phase === "setup" && (
-        <SetupCard
-          prospects={withName}
-          selectedId={selected?.id || ""}
-          onSelect={setSelectedId}
-          onStart={start}
-        />
+        <SetupCard prospects={withName} selectedId={selected?.id || ""} onSelect={setSelectedId} onStart={start} />
       )}
 
       {phase === "consent" && (
         <div className="rounded-2xl border border-amber-400/40 bg-amber-400/10 p-5 text-center">
           <p className="text-sm font-semibold text-ink">Before you start transcription:</p>
           <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
-            Say this to the prospect first:{" "}
+            Say this first:{" "}
             <span className="font-medium text-ink">
               &quot;I&apos;m taking notes so I don&apos;t miss anything — is that okay?&quot;
             </span>
@@ -414,8 +554,9 @@ export function CallCopilot({
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-line">
               <div className="h-full rounded-full bg-brand-500 transition-all" style={{ width: `${progress}%` }} />
             </div>
-            <div className="mt-1 text-[11px] text-ink-faint">
-              Line {lineIndex + 1} / {SCRIPT.length} · {SCRIPT[lineIndex]?.phase}
+            <div className="mt-1 flex items-center justify-between text-[11px] text-ink-faint">
+              <span>Line {lineIndex + 1} / {SCRIPT.length} · {SCRIPT[lineIndex]?.phase}</span>
+              {sayingSuggestionRef.current && <span className="font-medium text-brand-600">responding</span>}
             </div>
 
             <div className="mt-3 min-h-[92px] rounded-xl border border-line bg-paper/50 p-3 text-lg font-semibold leading-snug">
@@ -426,7 +567,7 @@ export function CallCopilot({
                   </span>
                 ))
               ) : (
-                <span className="text-ink-soft">{currentLine}</span>
+                <span className="text-ink-soft">{sayText || currentLine}</span>
               )}
               {mode === "you" && wm.complete && (
                 <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-xs font-medium text-brand-600">
@@ -451,35 +592,71 @@ export function CallCopilot({
             </div>
             {!supportedRef.current && (
               <p className="mt-2 text-[11px] text-ink-faint">
-                No speech recognition in this browser — read the line yourself and use the buttons.
-                Type what the prospect says in the box on the right.
+                No speech recognition here — read the line yourself, use the buttons, and type what the
+                prospect says on the right.
               </p>
             )}
           </div>
 
           {/* RIGHT: intelligence */}
           <div className="rounded-2xl border border-line bg-white p-4 shadow-card">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Intelligence</div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Intelligence</span>
+              <label className="inline-flex items-center gap-1 text-[11px] text-ink-soft">
+                <input type="checkbox" checked={aiEnabled} onChange={(e) => setAiEnabled(e.target.checked)} className="h-3.5 w-3.5 accent-brand-500" />
+                Use AI
+              </label>
+            </div>
 
             <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
               {objection && <span className="rounded-full bg-amber-400/20 px-2 py-1 font-medium text-amber-600">Objection: {objection}</span>}
-              <span className="rounded-full bg-ink/5 px-2 py-1 font-medium text-ink-soft">
-                Pain: {painLevel(painScoreOf(prospectText))}
-              </span>
+              <span className="rounded-full bg-ink/5 px-2 py-1 font-medium text-ink-soft">Pain: {painLevel(painScoreOf(prospectText))}</span>
               {detectSources(prospectText).length > 0 && (
                 <span className="rounded-full bg-ink/5 px-2 py-1 font-medium text-ink-soft">Leads: {detectSources(prospectText).join(", ")}</span>
               )}
             </div>
 
-            <Labeled label="Suggested response">
-              <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-2.5 text-sm text-ink">
-                {suggestion || "—"}
+            {/* Instant (rule) suggestion */}
+            <Labeled label="Instant suggestion (rules)">
+              <div className="rounded-lg border border-line bg-paper/50 p-2.5 text-sm text-ink-soft">{suggestion || "—"}</div>
+              <div className="mt-1 flex items-center gap-3">
+                {suggestion && <CopyRow text={suggestion} label="instant" />}
+                <button onClick={() => useResponse(suggestion)} className="text-xs font-medium text-ink-faint hover:text-ink">Use this</button>
               </div>
-              {suggestion && <CopyRow text={suggestion} label="response" />}
+            </Labeled>
+
+            {/* AI refined suggestion */}
+            <Labeled label="AI refined suggestion">
+              <div className={cn("rounded-lg border p-2.5 text-sm", aiSug && aiEnabled ? "border-brand-200 bg-brand-50/50 text-ink" : "border-line bg-paper/40 text-ink-faint")}>
+                {aiLoading ? (
+                  <span className="inline-flex items-center gap-1.5 text-ink-soft">
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Refining response…
+                  </span>
+                ) : aiEnabled && aiSug ? (
+                  aiSug.suggestedResponse
+                ) : aiUnavailable ? (
+                  "AI unavailable (no API key set) — using instant suggestions."
+                ) : (
+                  "Waiting for the prospect to speak…"
+                )}
+              </div>
+              {aiSug && aiEnabled && !aiLoading && (
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <CopyRow text={aiSug.suggestedResponse} label="AI" />
+                  <button onClick={() => useResponse(aiSug.suggestedResponse)} className="text-xs font-semibold text-brand-600 hover:text-brand-700">Use AI</button>
+                  <span className="text-[11px] text-ink-faint">{aiSug.shortReason}</span>
+                </div>
+              )}
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <MiniBtn onClick={() => callAi()} disabled={!aiEnabled || aiLoading}><Wand2 className="h-3 w-3" /> Regenerate</MiniBtn>
+                <MiniBtn onClick={() => callAi("shorter")} disabled={!aiEnabled || aiLoading}>Shorter</MiniBtn>
+                <MiniBtn onClick={() => callAi("more_direct")} disabled={!aiEnabled || aiLoading}>More direct</MiniBtn>
+                <MiniBtn onClick={() => useResponse(DEMO_ASK)}>Ask for demo</MiniBtn>
+              </div>
             </Labeled>
 
             <Labeled label="Next best question">
-              <div className="text-sm text-ink-soft">{nextQuestion(lineIndex) ?? "Go for the close."}</div>
+              <div className="text-sm text-ink-soft">{(aiEnabled && aiSug?.nextBestQuestion) || nextQuestion(lineIndex) || "Go for the close."}</div>
             </Labeled>
 
             <Labeled label={supportedRef.current ? "Live transcript (prospect)" : "Type what the prospect says"}>
@@ -488,24 +665,20 @@ export function CallCopilot({
                 onChange={(e) => {
                   prospectRef.current = e.target.value;
                   setProspectText(e.target.value);
-                  refreshIntel(e.target.value, e.target.value);
+                  refreshIntel(e.target.value);
+                  scheduleAi();
                 }}
                 rows={4}
                 placeholder={supportedRef.current ? "Prospect speech appears here…" : "Type notes on what they say…"}
                 className="w-full resize-y rounded-lg border border-line bg-paper/40 p-2 text-xs text-ink-soft outline-none focus:border-brand-500 scroll-slim"
               />
             </Labeled>
-
-            {interim && mode === "prospect" && (
-              <p className="text-[11px] italic text-ink-faint">…{interim}</p>
-            )}
+            {interim && mode === "prospect" && <p className="text-[11px] italic text-ink-faint">…{interim}</p>}
           </div>
         </div>
       )}
 
-      {phase === "summary" && (
-        <SummaryCard summary={summary} onDone={reset} />
-      )}
+      {phase === "summary" && <SummaryCard summary={summary} loading={summaryLoading} onDone={reset} />}
     </div>
   );
 }
@@ -527,8 +700,8 @@ function SetupCard({
     <div className="rounded-2xl border border-line bg-white p-5 shadow-card">
       {prospects.length === 0 ? (
         <p className="text-sm text-ink-soft">
-          Add prospects to the spreadsheet first (Find prospects / Import), then pick one here to
-          start a guided call.
+          Add prospects to the spreadsheet first (Find prospects / Import), then pick one here to start
+          a guided call.
         </p>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
@@ -541,8 +714,7 @@ function SetupCard({
             >
               {prospects.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.business}
-                  {p.phone ? ` — ${p.phone}` : ""}
+                  {p.business}{p.phone ? ` — ${p.phone}` : ""}
                 </option>
               ))}
             </select>
@@ -554,13 +726,14 @@ function SetupCard({
       )}
       <p className="mt-3 text-[11px] text-ink-faint">
         Copilot only listens, transcribes, suggests, and saves notes — it never dials or speaks for
-        you. Works best in Chrome (mic permission). No speech? It falls back to manual notes.
+        you. Best in Chrome with mic on speakerphone. Rule suggestions are instant; AI refines them
+        when an API key is set. No speech / no key? It still works.
       </p>
     </div>
   );
 }
 
-function SummaryCard({ summary, onDone }: { summary: CallSummary | null; onDone: () => void }) {
+function SummaryCard({ summary, loading, onDone }: { summary: (CallSummary & { demoLikelihood?: string; source?: string }) | null; loading: boolean; onDone: () => void }) {
   if (!summary)
     return (
       <div className="rounded-2xl border border-line bg-white p-5 shadow-card">
@@ -574,6 +747,9 @@ function SummaryCard({ summary, onDone }: { summary: CallSummary | null; onDone:
         <Check className="h-5 w-5 text-brand-600" />
         <span className="text-lg font-bold text-ink">Saved: {summary.outcomeLabel}</span>
         <span className="rounded-full bg-ink/5 px-2 py-0.5 text-xs font-medium text-ink-soft">Pain: {summary.painLevel}</span>
+        {summary.demoLikelihood && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">Demo likelihood: {summary.demoLikelihood}</span>}
+        {loading && <span className="inline-flex items-center gap-1 text-xs text-ink-faint"><RefreshCw className="h-3 w-3 animate-spin" /> AI refining…</span>}
+        {summary.source === "ai" && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700">AI</span>}
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <Field label="Summary">{summary.summary}</Field>
@@ -586,14 +762,26 @@ function SummaryCard({ summary, onDone }: { summary: CallSummary | null; onDone:
         </div>
         <div>
           <Labeled label="Follow-up email">
-            <div className="max-h-28 overflow-auto rounded-lg border border-line bg-paper/50 p-2 text-xs text-ink-soft scroll-slim whitespace-pre-line">{summary.followUpEmail}</div>
+            <div className="max-h-28 overflow-auto whitespace-pre-line rounded-lg border border-line bg-paper/50 p-2 text-xs text-ink-soft scroll-slim">{summary.followUpEmail}</div>
             <CopyRow text={summary.followUpEmail} label="email" />
           </Labeled>
         </div>
       </div>
-      <p className="mt-3 text-xs text-ink-faint">Saved to the spreadsheet row (status, flags, notes, next action, follow-up date) and to your call stats.</p>
+      <p className="mt-3 text-xs text-ink-faint">Saved to the spreadsheet row (status, flags, notes, next action, follow-up) and your call stats.</p>
       <button onClick={onDone} className={cn(primaryBtn, "mt-3")}>Call the next one</button>
     </div>
+  );
+}
+
+function MiniBtn({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center gap-1 rounded-lg border border-line bg-white px-2 py-1 text-[11px] font-medium text-ink-soft transition hover:border-ink-faint/40 disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }
 
